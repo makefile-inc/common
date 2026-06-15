@@ -78,7 +78,7 @@ check/installed/docker: ## docker
 
 ##@ Common. Install binary to local bin dir
 
-install/jq: bin check/installed/curl ## jq github.com/jqlang/jq
+install/jq: bin check/installed/curl ## jq https://github.com/jqlang/jq
 	$(shell $(call CHECK_BINARY,$(JQ_BIN_NAME),--version,$(JQ_VERSION)))
 	@if [ "$(.SHELLSTATUS)" -ne 0 ]; then \
 		set -Eeuo pipefail; \
