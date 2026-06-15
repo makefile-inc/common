@@ -238,7 +238,7 @@ do/some:
 
 #### Example output:
 
-Usage: make ${\color{yellow}<target>}$ OPTION=${\color{cyan}<value>}$
+Usage: make ${\color{yellow}target}$ OPTION=${\color{cyan}value}$
 
   ${\color{yellow}help}$&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Show this message
 <br>
