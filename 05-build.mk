@@ -170,3 +170,6 @@ build/all: build/linux/all  build/mac/all ## Do build target for mac and linux f
 	@##~     OUT_BIN - output binary
 	@##~     BUILD_OS - target os (linux, darwin)
 	@##~     BUILD_ARCH - target arch (amd64, arm64)
+
+build/clean: ## Delete build/ directory 
+	rm -rfv "$(BUILD_PATH)"
