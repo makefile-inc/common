@@ -1,3 +1,5 @@
+MAKEFLAGS += --no-print-directory
+
 SHELL = /usr/bin/env bash
 
 .DEFAULT_GOAL := help
@@ -134,3 +136,5 @@ help:
 	  		/^##@/                   { printf "\n${BOLD_COLOR}%s${NO_COLOR}\n", substr($$0, 5) } ' \
 		"$$inc"; \
 	done
+
+.PHONY: help

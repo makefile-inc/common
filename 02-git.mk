@@ -71,3 +71,5 @@ check/common/gitignore: ## Check that gitignore file contains another gitignor f
 		echo -e "${RED_COLOR}  $$err${NO_COLOR}"; \
 	done; \
 	exit 1
+
+.PHONY: check/common/gitignore

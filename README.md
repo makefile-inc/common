@@ -78,7 +78,15 @@ include $(CURDIR)/makefile-common/include.mk.inc
 
 ## Pre-definitions
 
-Includes contain some variables and make definitions. 
+Includes contain some variables and make definitions.
+
+## No print derictories
+
+Because includes uses recurcive make calls 00-common.mk add `--no-print-directory` argument:
+
+```Makefile
+MAKEFLAGS += --no-print-directory
+```
 
 ### Variables
 
@@ -390,7 +398,7 @@ Targets:
 - `build/mac`       - build binary for MacOS and arm64 arch
 - `build/mac/all`   - build binary for MacOS and all supported arch'es
 - `build/all`       - build binary for all supported os'es and arch'es
-- `build/clean`     - remove `BUILD_PATH` dir.
+- `clean/build`     - remove `BUILD_PATH` dir.
 
 ### Git
 
@@ -433,14 +441,14 @@ If target not marked with `## Description` this target will no output in help!
 
 #### Add options for target
 
-After definition and description add `##~ ` &nbsp; and parameter description after `##~ `.
-For multiple params, add multiple `##~ ` &nbsp; for every param separated by new line.
+After definition and description add `@##~ ` &nbsp; and parameter description after `##~ `.
+For multiple params, add multiple `@##~ ` &nbsp; for every param separated by new line.
 Example:
 
 ```Makefile
 target: ## Target description
-	##~ OP_NAME=name - operation name
-	##~ HELLO_NAME=name - name for output hello
+	@##~ OP_NAME=name - operation name
+	@##~ HELLO_NAME=name - name for output hello
 	@echo "Hello, $$HELLO_NAME! Start operation $${OP_NAME}..."
 ```
 

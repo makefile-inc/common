@@ -112,24 +112,25 @@ _build/general: build/dir
 
 build/current: export BUILD_OS = $(OS_CALCULATED)
 build/current: export BUILD_ARCH = $(ARCH_CALCULATED)
-build/current: _build/general ## Do build target for current os and arch
+build/current: ## Do build target for current os and arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
 	@##~     OUT_BIN - output binary
 	@##~     BUILD_OS - target os (linux, darwin)
 	@##~     BUILD_ARCH - target arch (amd64, arm64)
+	@$(MAKE) _build/general
 
 build/linux: export BUILD_OS = $(OS_LINUX)
 build/linux: export BUILD_ARCH = $(ARCH_CALCULATED)
-build/linux: _build/general ## Do build target for linux os and current arch
+build/linux: ## Do build target for linux os and current arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
 	@##~     OUT_BIN - output binary
 	@##~     BUILD_OS - target os linux
 	@##~     BUILD_ARCH - target arch (amd64, arm64)
-
+	@$(MAKE) _build/general
 
 build/linux/all: export BUILD_OS = $(OS_LINUX)
 build/linux/all: ## Do build target for linux for all arch
@@ -144,13 +145,14 @@ build/linux/all: ## Do build target for linux for all arch
 
 build/mac: export BUILD_OS = $(OS_MACOS)
 build/mac: export BUILD_ARCH = $(ARCH_ARM)
-build/mac: _build/general ## Do build target for linux os and arm arch
+build/mac: ## Do build target for linux os and arm arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
 	@##~     OUT_BIN - output binary
 	@##~     BUILD_OS - target os darwin
 	@##~     BUILD_ARCH - target arch arm64
+	@$(MAKE) _build/general
 
 build/mac/all: export BUILD_OS = $(OS_MACOS)
 build/mac/all: ## Do build target for mac for all arch
@@ -163,13 +165,17 @@ build/mac/all: ## Do build target for mac for all arch
 	@$(MAKE) _build/general BUILD_ARCH=$(ARCH_AMD)
 	@$(MAKE) _build/general BUILD_ARCH=$(ARCH_ARM)
 
-build/all: build/linux/all  build/mac/all ## Do build target for mac and linux for all arch
+build/all: ## Do build target for mac and linux for all arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
 	@##~     OUT_BIN - output binary
 	@##~     BUILD_OS - target os (linux, darwin)
 	@##~     BUILD_ARCH - target arch (amd64, arm64)
+	@$(MAKE) build/linux/all
+	@$(MAKE) build/mac/all
 
-build/clean: ## Delete build/ directory 
-	rm -rfv "$(BUILD_PATH)"
+clean/build: ## Delete build/ directory 
+	@rm -rfv "$(BUILD_PATH)"
+
+.PHONY: build/dir _build/general build/current build/linux build/linux/all build/mac build/mac/all build/all clean/build

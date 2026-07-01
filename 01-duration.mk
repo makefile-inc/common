@@ -80,6 +80,6 @@ if [ "$$ret" -eq 0 ]; then \
   echo "${GREEN_COLOR}$$1 $$_dur_t${NO_COLOR}"; \
   exit 0; \
 fi; \
-echo "${RED_COLOR}$$1 failed with code \"$$ret\": $$_dur_t${NO_COLOR}"; \
+echo "${RED_COLOR}$$1 failed: $$_dur_t${NO_COLOR}"; \
 exit $$ret'
 endef

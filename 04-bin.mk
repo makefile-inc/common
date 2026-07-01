@@ -183,7 +183,7 @@ check/installed/docker: ## docker
 
 ##@ Common. Install binary to local bin dir
 
-install/binary: bin check/installed/curl ## install (download) binary with provided version to BINARIES_PATH (./bin dir by default)
+install/binary: bin check/installed/curl ## install (download) binary with provided version to BINARIES_PATH (./bin dir by default) use $(MAKE) install/binary for call!
 	@##~ INSTALL_BIN_NAME=NAME - name of binary in BINARIES_PATH
 	@##~ INSTALL_BIN_VERSION=VERSION - version of binary
 	@##~ INSTALL_BIN_VERSION_ARG=ARG - version argument passed in binary for extract version, by default --version
@@ -230,15 +230,21 @@ JQ_PLATFORM_ARCH = $(JQ_PLATFORM)-$(ARCH_CALCULATED)
 install/jq: export INSTALL_BIN_NAME = $(JQ_BIN_NAME)
 install/jq: export INSTALL_BIN_VERSION = $(JQ_VERSION)
 install/jq: export INSTALL_BIN_URL = https://github.com/jqlang/jq/releases/download/jq-@BIN_VER@/jq-$(JQ_PLATFORM_ARCH)
-install/jq: install/binary ## jq https://github.com/jqlang/jq
+install/jq: ## jq https://github.com/jqlang/jq
+	@$(MAKE) install/binary
 
 install/yq: export INSTALL_BIN_NAME = $(YQ_BIN_NAME)
 install/yq: export INSTALL_BIN_VERSION = $(YQ_VERSION)
 install/yq: export INSTALL_BIN_URL = https://github.com/mikefarah/yq/releases/download/v@BIN_VER@/yq_@BIN_OS@_@BIN_ARCH@
-install/yq: install/binary ## yq https://github.com/mikefarah/yq
+install/yq: ## yq https://github.com/mikefarah/yq
+	@$(MAKE) install/binary
+
+install/common/all: install/jq install/yq ## Install common deps
 
 ##@ Common. Cleanup
 
 clean/common: ## Remove common binaries from local bin dir
-	rm -f "$(JQ_BIN_FULL)"
-	rm -f "$(YQ_BIN_FULL)"
+	@rm -fv "$(JQ_BIN_FULL)"
+	@rm -fv "$(YQ_BIN_FULL)"
+
+.PHONY: check/installed/curl check/installed/docker install/binary install/jq install/yq install/common/all clean/common
