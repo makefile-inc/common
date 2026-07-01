@@ -404,13 +404,33 @@ Targets:
 
 ### Git
 
-- `check/common/gitignore` - check that gitignore file contains another gitignore files rules.
+- `common/git/check/gitignore` - check that gitignore file contains another gitignore files rules.
    Userfull for checking in another includes repos and rott makefile that all gitignore rules
    were added to root `.gitignore` file.
    Params:
    - `ROOT_GITIGNORE`=*PATH* - path to gitignore file for check (root .gitignore). Default `$(CURDIR)/.gitignore`
    - `GITIGNORES_WITH_REQUIRED_RULES`=*PATHS...* - comma separated paths to gitignore files that should contains `ROOT_GITIGNORE`.
-
+- `common/git/check/has-diff` - check that repo has difference
+  Params:
+  - `TARGET_NAME`    - if passed run make target before git check. Optional
+  - `FILES_TO_CHECK` - comma separated paths regexp for check. Optional
+  - `FILES_TO_SKIP`  - comma separated paths regexp for skip. Optional. Has higer priority.
+  Examples:
+  ```bash
+  make common/git/check/has-diff FILES_TO_SKIP=".*.mk" FILES_TO_CHECK=".*.mk" TARGET_NAME="build/dir"
+  make common/git/check/has-diff FILES_TO_SKIP=".*.md,.*.mk" TARGET_NAME="build/dir"
+  make common/git/check/has-diff FILES_TO_CHECK=".*.mk"
+  make common/git/check/has-diff
+  ```
+  ```Makefile
+  include *.mk
+  go/tidy:
+  	go mod tidy
+  
+  check/no-tidy: export FILES_TO_CHECK=go.mod,go.sum
+  check/no-tidy: export TARGET_NAME=go/tidy
+  check/no-tidy: common/git/check/has-diff
+  ```
 
 ### Add targets to help output
 

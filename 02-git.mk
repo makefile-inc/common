@@ -1,6 +1,6 @@
 ##@ Common. Git
 
-check/common/gitignore: ## Check that gitignore file contains another gitignor files rules.
+common/git/check/gitignore: ## Check that gitignore file contains another gitignor files rules.
 	@##~ ROOT_GITIGNORE=PATH - path to gitignore file for check. Default $(CURDIR)/.gitignore
 	@##~ GITIGNORES_WITH_REQUIRED_RULES=PATHS... - comma separated paths to gitignore files that should contains ROOT_GITIGNORE
 	@root_gitignore="$$ROOT_GITIGNORE"; \
@@ -72,4 +72,75 @@ check/common/gitignore: ## Check that gitignore file contains another gitignor f
 	done; \
 	exit 1
 
-.PHONY: check/common/gitignore
+common/git/check/has-diff: ## Check diff in repo
+	@##~ TARGET_NAME=NAME - if passed run make target before git diff check
+	@##~ FILES_TO_CHECK=PATHS... - comma separated paths regexp for check. Can be not passed
+	@##~ FILES_TO_SKIP=PATHS... - comma separated paths regexp for skip. Can be not passed
+	@${INCLUDE_ECHO} \
+	set -Eeuo pipefail; \
+	target_name="$${TARGET_NAME:-}"; \
+	if [ -n "$$target_name" ]; then \
+		echo_info "Run '$$target_name'..."; \
+		if ! $(MAKE) "$$target_name"; then \
+			exit_with_err "$$target_name was failed" 2; \
+		fi; \
+	fi; \
+	patterns_for_check=(); \
+	files_check="$${FILES_TO_CHECK:-}"; \
+	if [ -n "$$files_check" ]; then \
+		IFS=',' read -r -a patterns_for_check <<< "$$files_check"; \
+	fi; \
+	patterns_for_skip=(); \
+	files_skip="$${FILES_TO_SKIP:-}"; \
+	if [ -n "$$files_skip" ]; then \
+		IFS=',' read -r -a patterns_for_skip <<< "$$files_skip"; \
+	fi; \
+	output="$$(git diff --name-status | cut -f 2 | sort)"; \
+	if [ -z "$$output" ]; then \
+		exit 0; \
+	fi; \
+	files=(); \
+	while IFS= read -r fl; do \
+    	files+=("$$fl"); \
+	done <<<"$$output"; \
+	changed=(); \
+	for fl_a in "$${files[@]}"; do \
+		skipped=""; \
+		for skp in "$${patterns_for_skip[@]}"; do \
+			if grep -qE "$$skp" <<<"$$fl_a"; then \
+				skipped="true"; \
+				break; \
+			fi; \
+		done; \
+		if [ -n "$$skipped" ]; then \
+			echo_info "$$fl_a skipped"; \
+			continue; \
+		fi; \
+    	if [ "$${#patterns_for_check[@]}" -eq 0 ]; then \
+			changed+=("$$fl_a"); \
+			continue; \
+		fi; \
+		file_changed=""; \
+		for chn in "$${patterns_for_check[@]}"; do \
+			if grep -qE "$$chn" <<<"$$fl_a"; then \
+				file_changed="true"; \
+				break; \
+			fi; \
+		done; \
+		if [ -n "$$file_changed" ]; then \
+			changed+=("$$fl_a"); \
+		else \
+			echo_info "$$fl_a skipped"; \
+		fi; \
+	done; \
+	if [ "$${#changed[@]}" -eq 0 ]; then \
+		exit 0; \
+	fi; \
+	echo_err "Files changed:"; \
+	for chn_f in "$${changed[@]}"; do \
+		echo_err "  $$chn_f"; \
+	done; \
+	exit 1
+
+
+.PHONY: common/git/check/gitignore common/git/check/has-diff
