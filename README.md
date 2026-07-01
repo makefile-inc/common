@@ -354,23 +354,25 @@ Next definitions can be included multiple times because sh redeclare function wi
 
 - `bin` - create `BINARIES_PATH`
 - `install/binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version, if not - download.
+  **WARNING! Call this target with recurcive call make to prevent skip run target in another targets multiple times!**
   Params:
   - `INSTALL_BIN_NAME`=*NAME* - name of binary in `BINARIES_PATH`
 	- `INSTALL_BIN_VERSION`=*VERSION* - version of binary
 	- `INSTALL_BIN_VERSION_ARG`=*ARG* - version argument passed in binary for extract version, by default `--version`
 	- `INSTALL_BIN_URL`=*URL* - url for download binary. Can contains: 
-	   - `@BIN_VER@`  - replace to version passed via `INSTALL_BIN_VERSION` 
-	   - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin)
-	   - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64)
-	   For example: `https://github.com/mikefarah/yq/releases/download/v@BIN_VER@/yq_@BIN_OS@_@BIN_ARCH@`
+	  - `@BIN_VER@`  - replace to version passed via `INSTALL_BIN_VERSION` 
+	  - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin)
+	  - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64)
+	  For example: `https://github.com/mikefarah/yq/releases/download/v@BIN_VER@/yq_@BIN_OS@_@BIN_ARCH@`
 
-     Example:
-     ```Makefile
-     install/yq: export INSTALL_BIN_NAME = $(YQ_BIN_NAME)
-     install/yq: export INSTALL_BIN_VERSION = $(YQ_VERSION)
-     install/yq: export INSTALL_BIN_URL = https://github.com/mikefarah/yq/releases/download/v@BIN_VER@/yq_@BIN_OS@_@BIN_ARCH@
-     install/yq: install/binary ## yq https://github.com/mikefarah/yq
-     ```
+    Example:
+    ```Makefile
+    install/yq: export INSTALL_BIN_NAME = $(YQ_BIN_NAME)
+    install/yq: export INSTALL_BIN_VERSION = $(YQ_VERSION)
+    install/yq: export INSTALL_BIN_URL = https://github.com/mikefarah/yq/releases/download/v@BIN_VER@/yq_@BIN_OS@_@BIN_ARCH@
+    install/yq: ## yq https://github.com/mikefarah/yq
+    	@$(MAKE) install/binary # USE MAKE FOR PREVENT SKIP TARGET!
+    ```
 - `check/installed/curl` - check that [curl](https://curl.se/) is installed in the system
 - `check/installed/docker` - check that [docker](https://www.docker.com/) is installed in the system
 - `install/jq` - install [jq](https://github.com/jqlang/jq) to local bin path
