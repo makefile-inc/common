@@ -8,7 +8,7 @@ Should be installed:
 - `bash` >= 4.X.X
 - `make`
 - `awk`. For MacOS should installed `gawk`
-- `curl` - it needs for download dependencies. By default, targes that needs curl
+- `curl` - it needs for download dependencies. By default, targets that needs curl
    check that its installed
 - now we support only `Linux` and `MacOS` on `x86` and `ARM` 64-bits.
 
@@ -23,7 +23,7 @@ If you are using `alpine` containers, you should install bash with next command:
 apk update && apk add --no-cache bash
 ```
 
-By default, `alpine` does not conains bash.
+By default, `alpine` does not contains bash.
 
 #### MacOS
 
@@ -66,7 +66,7 @@ Checkout to target version:
 ```
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.2.0 && git pull
+git fetch -a && git checkout v0.4.0 && git pull
 popd
 ```
 
@@ -94,9 +94,9 @@ include $(CURDIR)/makefile-common/include.mk.inc
 
 Includes contain some variables and make definitions.
 
-## No print derictories
+## No print directories
 
-Because includes uses recurcive make calls 00-common.mk add `--no-print-directory` argument:
+Because includes uses recursive make calls 00-common.mk add `--no-print-directory` argument:
 
 ```Makefile
 MAKEFLAGS += --no-print-directory
@@ -104,7 +104,7 @@ MAKEFLAGS += --no-print-directory
 
 ### Variables
 
-Now inclues files in `common` repo contains next predifined variables:
+Now includes files in `common` repo contains next predefined variables:
 - `BINARIES_PATH` - dir to store local helper binaries. By default `$(CURDIR)/bin`.
   Can be redeclared with `SET_BINARIES_PATH` variable.
   Also, includes add this path to `PATH` env when running make. 
@@ -125,7 +125,7 @@ Now inclues files in `common` repo contains next predifined variables:
 - `OS_MACOS` - darwin (can be used with `OS_CALCULATED`)
 - `ARCH_AMD` - amd64  (can be used with `ARCH_CALCULATED`)
 - `ARCH_ARM` - arm64   (can be used with `ARCH_CALCULATED`)
-- `ARCH_CALCULATED` - result of command `uname -m` architicture (like `amd64`, `arm64`)
+- `ARCH_CALCULATED` - result of command `uname -m` architecture (like `amd64`, `arm64`)
 - `OS_CALCULATED` - OS name `linux` or `darwin` for MacOS
 - `AWK_BIN` - awk binary name. For linux `awk`, for MacOS `gawk`
 - `JQ_BIN_FULL` - full path to local installed [jq](https://github.com/jqlang/jq)
@@ -143,7 +143,7 @@ Next definitions can call in makefile with `$(shell $(call ...))` or `$(call ...
   - `$(2)` - binary argument for consume current binary version.
   - `$(3)` - target binary version, that will grep from version call.
 
-  When def called with shell, prepared script retuns none-zero code
+  When def called with shell, prepared script returns none-zero code
   if binary not installed or not have target version.
 
   Example:
@@ -158,7 +158,7 @@ Next definitions can call in makefile with `$(shell $(call ...))` or `$(call ...
 			chmod +x "$$dest"; \
 		fi
    ```
-- `RUN_WITH_CLEANUP` - run target and call another tharget after run first (with or withouth error).
+- `RUN_WITH_CLEANUP` - run target and call another targets after run first (with or without error).
   Params:
    - `$(1)` - target for run.
    - `$(2)` - cleanup target.
@@ -174,7 +174,7 @@ Next definitions can call in makefile with `$(shell $(call ...))` or `$(call ...
 
 #### Scripts definitions
 
-This definitions can be used inside makefile targets as makefile varibles, like:
+This definitions can be used inside makefile targets as makefile variables, like:
 ```Makefile
 do/some:
 	@out="$$(${DEFINITION} "param1" "param2")"; \
@@ -182,11 +182,11 @@ do/some:
 ```
 
 - `NOW_MICROSECONDS` - call date and return to stdout current unix-time with microseconds.
-   No params. Userfull with `HUMAN_DURATION_MICROSECONDS`.
+   No params. Usefully with `HUMAN_DURATION_MICROSECONDS`.
 - `HUMAN_DURATION_MICROSECONDS` output duration microseconds in human way.
    Params:
-   - `$1` - start microsends unix-time (can get with `NOW_MICROSECONDS`)
-   - `$2` - end microsends unix-time (can get with `NOW_MICROSECONDS`)
+   - `$1` - start microseconds unix-time (can get with `NOW_MICROSECONDS`)
+   - `$2` - end microseconds unix-time (can get with `NOW_MICROSECONDS`)
 
    Output can be like:
 
@@ -206,12 +206,12 @@ do/some:
 		dur="$$(${HUMAN_DURATION_MICROSECONDS} "$$start" "$$end")"; \
 		echo "Duration $$dur"  
   ```
-- `RUN_WITH_DURATION` - call another tharget, calculate duration time and print duration.
+- `RUN_WITH_DURATION` - call another target, calculate duration time and print duration.
   Warning! Because whe use call another bins in bash duration of target can little different 
   from run standalone.
   Params:
   - `$1` - makefile target
-  - `$2` - humman name of target for print.
+  - `$2` - human name of target for print.
 
   If target exit with zero code duration will print with green color, otherwise with red.
   
@@ -228,22 +228,14 @@ do/some:
 
   $ make test/run-with-duration/ok
 
-  make[1]: Entering directory '/home/nick/src/makefile.inc/common'
-
-  make[1]: Leaving directory '/home/nick/src/makefile.inc/common'
-  
   ${\color{green}Do \space with \space ok \space 02.023318s}$
 
     
   $ make test/run-with-duration/fail
 
-  make[1]: Entering directory '/home/nick/src/makefile.inc/common'
-
-  make[1]: Leaving directory '/home/nick/src/makefile.inc/common'
-  
   ${\color{red}Do \space with \space fail \space 02.023318s}$
 
-#### Scripts inludes
+#### Scripts includes
 
 Next definitions add bash functions definitions, which can cal in one line bash targets, like:
 ```Makefile
@@ -368,7 +360,7 @@ Next definitions can be included multiple times because sh redeclare function wi
 
 - `bin` - create `BINARIES_PATH`
 - `install/binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version, if not - download.
-  **WARNING! Call this target with recurcive call make to prevent skip run target in another targets multiple times!**
+  **WARNING! Call this target with recursive call make to prevent skip run target in another targets multiple times!**
   Params:
   - `INSTALL_BIN_NAME`=*NAME* - name of binary in `BINARIES_PATH`
 	- `INSTALL_BIN_VERSION`=*VERSION* - version of binary
@@ -397,11 +389,11 @@ Next definitions can be included multiple times because sh redeclare function wi
 
 Next targets are generic targets for build binaries. Before run creates `BUILD_PATH` dir.
 Every target take next params:
-- `PROJECT_NAME` - name of preject
+- `PROJECT_NAME` - name of project
 - `BUILD_TARGET` - make target for run.
 
 Targets pass to `BUILD_TARGET` next params:
-- `OUT_BIN`    - ouptput binary file path in `./build` (can be redeclared with `SET_BUILD_PATH`). 
+- `OUT_BIN`    - output binary file path in `./build` (can be redeclared with `SET_BUILD_PATH`). 
                  File has next format `$(BUILD_PATH)/$(PROJECT_NAME)-OS-ARCH`
 - `BUILD_OS`   - os for build (linux or darwin)
 - `BUILD_ARCH` - build arch (amd64 or arm64).
@@ -419,7 +411,7 @@ Targets:
 ### Git
 
 - `common/git/check/gitignore` - check that gitignore file contains another gitignore files rules.
-   Userfull for checking in another includes repos and rott makefile that all gitignore rules
+   Usefully for checking in another includes repos and root makefile that all gitignore rules
    were added to root `.gitignore` file.
    Params:
    - `ROOT_GITIGNORE`=*PATH* - path to gitignore file for check (root .gitignore). Default `$(CURDIR)/.gitignore`
@@ -428,7 +420,7 @@ Targets:
   Params:
   - `TARGET_NAME`    - if passed run make target before git check. Optional
   - `FILES_TO_CHECK` - comma separated paths regexp for check. Optional
-  - `FILES_TO_SKIP`  - comma separated paths regexp for skip. Optional. Has higer priority.
+  - `FILES_TO_SKIP`  - comma separated paths regexp for skip. Optional. Has higher priority.
   Examples:
   ```bash
   make common/git/check/has-diff FILES_TO_SKIP=".*.mk" FILES_TO_CHECK=".*.mk" TARGET_NAME="build/dir"
@@ -458,7 +450,7 @@ Usage: make ${\color{yellow}target}$ OPTION="${\color{cyan}value}$"
 **Common. Git**
 <br>
 <br>
-  ${\color{yellow}target}$&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Check that gitignore file contains another gitignor files rules.<br>
+  ${\color{yellow}target}$&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Check that gitignore file contains another gitignore files rules.<br>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              ${\color{cyan}PARAM1=val \space First \space param}$<br>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
