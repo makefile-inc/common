@@ -76,6 +76,20 @@ Include in root Makefile in the next way:
 include $(CURDIR)/makefile-common/include.mk.inc
 ```
 
+**WARNING! If you use submodule and github actions, add to checkout action checkout submodules `submodules: "true"`, like:**
+```yaml
+...
+    steps:
+      - &checkout_step
+        name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          submodules: "true"
+          ref: ${{ github.event.pull_request.head.sha }}
+...
+``` 
+
 ## Pre-definitions
 
 Includes contain some variables and make definitions.
