@@ -9,14 +9,29 @@
 #   check_and_download_bin - check that binary is exists in BINARIES_PATH and executable and have correct version
 #     if not - download.
 #     Arguments:
-#       $1 - binary name without path
-#       $2 - version argument passed in binary for extract version
-#       $3 - version to check. Function uses grep for match version
-#       $4 - url to download. Can be contains next string for substitution 
+#       $1 - url to download (can be passed with env INSTALL_BIN_URL). Can be contains next string for substitution 
 #          @BIN_VER@  - replace to version passed via $3
 #          @BIN_OS@   - replace to calculated os name $(OS_CALCULATED) (linux or darwin) 
 #          @BIN_ARCH@ - replace to calculated os name $(ARCH_CALCULATED) (amd64 or arm64) 
+#       $2 - binary name without path (can be passed with env INSTALL_BIN_NAME)
+#       $3 - version argument passed in binary for extract version (can be passed with env INSTALL_BIN_VERSION_ARG)
+#       $4 - version to check. Function uses grep for match version (can be passed with env INSTALL_BIN_VERSION)
 #   if binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+#
+#   check_and_get_bin - check that binary is exists in `BINARIES_PATH` and executable and have correct version
+#     if not - call passed function for get binary.
+#     Arguments:
+#       $1 - function name for get binary. Function pass next args to get function
+#          $1 - version of binary
+#          $2 - arch (amd64 or arm64)
+#          $3 - os (linux or darwin) 
+#          $4 - binary name only 
+#          $5 - full binary path
+#          $6 - binaries path $(BINARIES_PATH) 
+#       $2 - binary name without path (can be passed with env INSTALL_BIN_NAME)
+#       $3 - version argument passed in binary for extract version (can be passed with env INSTALL_BIN_VERSION_ARG)
+#       $4 - version to check. Function uses grep for match version (can be passed with env INSTALL_BIN_VERSION)
+#     if binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
 # Example include:
 #   @${INCLUDE_CHECK_BINARY} \ - slash is required!
 # Example:
@@ -28,30 +43,57 @@
 #   endif
 #   JQ_PLATFORM_ARCH = $(JQ_PLATFORM)-$(ARCH_CALCULATED)
 #   bin/jq/check:
-#	    @${INCLUDE_CHECK_BINARY} \
-#       if ! check_binary jq "--version" "1.8.1"; then \
-#	      echo "Download..."; \
-#	    fi
+# 		@${INCLUDE_CHECK_BINARY} \
+#  		if ! check_binary jq "--version" "1.8.1"; then \
+# 			echo "Download..."; \
+# 		fi
 #   bin/jq:
-#	    @${INCLUDE_CHECK_BINARY} \
-# 		url="https://github.com/jqlang/jq/releases/download/jq-@BIN_VER@/jq-$(JQ_PLATFORM_ARCH)"
-#       if ! check_and_download_bin jq "--version" "1.8.1" "$$url"; then \
-#	      echo "Download..."; \
-#	    fi
+# 		@${INCLUDE_CHECK_BINARY} \
+#  		url="https://github.com/jqlang/jq/releases/download/jq-@BIN_VER@/jq-$(JQ_PLATFORM_ARCH)"
+# 		if ! check_and_download_bin jq "--version" "1.8.1" "$$url"; then \
+# 			echo "Download..."; \
+# 		fi
+#   _test/install/dummy: export INSTALL_BIN_NAME = $(DUMMY_BIN)
+#   _test/install/dummy: export INSTALL_BIN_VERSION_ARG = ver
+#   _test/install/dummy: export INSTALL_BIN_VERSION = 0.0.1
+#   _test/install/dummy:
+# 		@function get_dummy() { \
+# 			local ver="$$1"; \
+# 			local arch="$$2"; \
+# 			local os="$$3"; \
+# 			local name="$$4"; \
+# 			local dest="$$5"; \
+# 			local pt="$$6"; \
+# 			{ \
+# 				echo -n "#"; \
+# 				echo '!/usr/bin/env bash'; \
+#  				echo 'if [[ $$1 == "ver" ]]; then'; \
+#  				echo -n '  echo "'; \
+#  				echo -n "name=$$name; path=$$pt; arch=$$arch; os=$$os; v$$ver"; \
+# 				echo '"'; \
+# 				echo 'fi'; \
+# 			} > "$$dest"; \
+# 		}; \
+# 		${INCLUDE_CHECK_BINARY} \
+# 		if ! check_and_get_bin get_dummy; then \
+# 			exit 1; \
+# 		fi; \
+# 		if [ ! -x "$(DUMMY_FULL_BIN)" ]; then \
+# 			exit_with_err "$(DUMMY_FULL_BIN) is not executable"; \
+# 		fi
 #   bin/yq:
-#	    @${INCLUDE_CHECK_BINARY} \
+# 		@${INCLUDE_CHECK_BINARY} \
 # 		url="https://github.com/mikefarah/yq/releases/download/v@BIN_VER@/yq_@BIN_OS@_@BIN_ARCH@"; \
-#       if ! check_and_download_bin jq "--version" "4.0.0" "$$url"; then \
-#	      exit 1; \
-#	    fi
+# 		if ! check_and_download_bin jq "--version" "4.0.0" "$$url"; then \
+# 			exit 1; \
+# 		fi
 # Can be included multiple times because sh redeclare function without error
 define INCLUDE_CHECK_BINARY
 ${INCLUDE_ECHO} \
 function check_binary() { \
-	binary="$$1"; \
-	version_arg="$$2"; \
-	version="$$3"; \
-\
+	local binary="$${1:-}"; \
+	local version_arg="$${2:-}"; \
+	local version="$${3:-}"; \
 	if [ -z "$$binary" ]; then \
   		echo_err "binary not passed as first arg"; \
   		return 2; \
@@ -64,19 +106,15 @@ function check_binary() { \
   		echo_err "target binary version not passed as third arg"; \
   		return 2; \
 	fi; \
-\
 	binary_full_path="$(BINARIES_PATH)/$${binary}"; \
-\
 	if [ ! -x "$$binary_full_path" ]; then \
   		echo_warn "$$binary_full_path not exists or not executable"; \
   		return 1; \
 	fi; \
-\
 	if ! got_bin_ver="$$("$$binary_full_path" "$$version_arg")"; then \
   		echo_err "${RED_COLOR}Version of $$binary_full_path cannot extracted!${NO_COLOR}"; \
   		return 2; \
 	fi; \
-\
 	if ! grep -q "$$version" <<<"$$got_bin_ver"; then \
   		echo_warn "Version of $$binary_full_path not match $$version Version is $$got_bin_ver"; \
   		return 1; \
@@ -85,38 +123,95 @@ function check_binary() { \
 	return 0; \
 }; \
 function check_and_download_bin() { \
-	binary="$$1"; \
-	version_arg="$$2"; \
-	version="$$3"; \
-	passed_url="$$4"; \
+	local passed_url="$${INSTALL_BIN_URL:-}"; \
+	if [ -z "$$passed_url" ]; then \
+		passed_url="$${1:-}"; \
+		if [ -z "$$passed_url" ]; then \
+			echo_err "Url for download binary is not passed"; \
+			return 2; \
+		fi; \
+	fi; \
+	local binary="$${INSTALL_BIN_NAME:-}"; \
+	if [ -z "$$binary" ]; then \
+		binary="$${2:-}"; \
+	fi; \
+	local version_arg="$${INSTALL_BIN_VERSION_ARG:-}"; \
+	if [ -z "$$version_arg" ]; then \
+		version_arg="$${3:-}"; \
+	fi; \
+	local version="$${INSTALL_BIN_VERSION:-}"; \
+	if [ -z "$$version" ]; then \
+		version="$${4:-}"; \
+	fi; \
+	local ret_code="2"; \
 	if ! check_binary "$$binary" "$$version_arg" "$$version"; then \
 		ret_code="$$?"; \
 		if [ "$$ret_code" -eq 2 ]; then \
 			echo_err "Incorrect args for check_and_download_bin"; \
 			return 2; \
 		fi; \
-		url="$$passed_url"; \
-		sub_ver="gsub(\"@BIN_VER@\", \"$$version\")"; \
+		local url="$$passed_url"; \
+		local sub_ver="gsub(\"@BIN_VER@\", \"$$version\")"; \
 		url="$$(echo "$$url" | ${AWK_BIN} "$$sub_ver")"; \
 		if [ -z "$$url" ]; then \
 			url="$$passed_url"; \
 		fi; \
 		passed_url="$$url"; \
-		sub_arch="gsub(\"@BIN_ARCH@\", \"$(ARCH_CALCULATED)\")"; \
+		local sub_arch="gsub(\"@BIN_ARCH@\", \"$(ARCH_CALCULATED)\")"; \
 		url="$$(echo "$$url" | ${AWK_BIN} "$$sub_arch")"; \
 		if [ -z "$$url" ]; then \
 			url="$$passed_url"; \
 		fi; \
 		passed_url="$$url"; \
-		sub_os="gsub(\"@BIN_OS@\", \"$(OS_CALCULATED)\")"; \
+		local sub_os="gsub(\"@BIN_OS@\", \"$(OS_CALCULATED)\")"; \
 		url="$$(echo "$$url" | ${AWK_BIN} "$$sub_os")"; \
 		if [ -z "$$url" ]; then \
 			url="$$passed_url"; \
 		fi; \
-		dest="$(BINARIES_PATH)/$${binary}"; \
+		local dest="$(BINARIES_PATH)/$${binary}"; \
 		echo_info "Install $${binary} to $$dest via url $$url"; \
 		if ! curl -sSfLo "$$dest" "$$url"; then \
 			echo_err "Cannot download $$binary"; \
+			return 1; \
+		fi; \
+		if ! chmod +x "$$dest"; then \
+			echo_err "Cannot chmod $$dest"; \
+			return 1; \
+		fi; \
+		return 0; \
+	fi; \
+	return 0; \
+}; \
+function check_and_get_bin() { \
+	local get_func="$$1"; \
+	if [ -z "$$get_func" ]; then \
+		echo_err "get binary function not passed as first arg"; \
+		return 2; \
+	fi; \
+	local binary="$${INSTALL_BIN_NAME:-}"; \
+	if [ -z "$$binary" ]; then \
+		binary="$${2:-}"; \
+	fi; \
+	local version_arg="$${INSTALL_BIN_VERSION_ARG:-}"; \
+	if [ -z "$$version_arg" ]; then \
+		version_arg="$${3:-}"; \
+	fi; \
+	local version="$${INSTALL_BIN_VERSION:-}"; \
+	if [ -z "$$version" ]; then \
+		version="$${4:-}"; \
+	fi; \
+	local ret_code="2"; \
+	if ! check_binary "$$binary" "$$version_arg" "$$version"; then \
+		ret_code="$$?"; \
+		if [ "$$ret_code" -eq 2 ]; then \
+			echo_err "Incorrect args for check_and_download_bin"; \
+			return 2; \
+		fi; \
+		local dest="$(BINARIES_PATH)/$${binary}"; \
+		echo_info "Install $${binary} to $$dest via call func:"; \
+		echo_info "  $$get_func \"$$version\" \"$(ARCH_CALCULATED)\" \"$(OS_CALCULATED)\" \"$$binary\" \"$$dest\" \"$(BINARIES_PATH)\""; \
+		if ! "$$get_func" "$$version" "$(ARCH_CALCULATED)" "$(OS_CALCULATED)" "$$binary" "$$dest" "$(BINARIES_PATH)"; then \
+			echo_err "get binary function returned error"; \
 			return 1; \
 		fi; \
 		if ! chmod +x "$$dest"; then \
@@ -145,14 +240,14 @@ endef
 #   endif
 #   JQ_PLATFORM_ARCH = $(JQ_PLATFORM)-$(ARCH_CALCULATED)
 #   bin/jq:
-#   	$(shell $(call CHECK_BINARY,$(JQ_BIN_NAME),--version,$(JQ_VERSION)))
-#		@if [ "$(.SHELLSTATUS)" -ne 0 ]; then \
-#			set -Eeuo pipefail; \
-#			dest="$(JQ_BIN_FULL)"; \
-#			echo -e "${GREEN_COLOR}Install yq for go to $$dest${NO_COLOR}"; \
-#			curl -sSfLo "$$dest" https://github.com/jqlang/jq/releases/download/jq-$(JQ_VERSION)/jq-$(JQ_PLATFORM_ARCH); \
-#			chmod +x "$$dest"; \
-#		fi
+#  		$(shell $(call CHECK_BINARY,$(JQ_BIN_NAME),--version,$(JQ_VERSION)))
+# 		@if [ "$(.SHELLSTATUS)" -ne 0 ]; then \
+# 			set -Eeuo pipefail; \
+# 			dest="$(JQ_BIN_FULL)"; \
+# 			echo -e "${GREEN_COLOR}Install yq for go to $$dest${NO_COLOR}"; \
+# 			curl -sSfLo "$$dest" https://github.com/jqlang/jq/releases/download/jq-$(JQ_VERSION)/jq-$(JQ_PLATFORM_ARCH); \
+# 			chmod +x "$$dest"; \
+# 		fi
 define CHECK_BINARY
 ${INCLUDE_CHECK_BINARY} \
 if ! check_binary "$(1)" "$(2)" "$(3)"; then \
@@ -209,7 +304,7 @@ install/binary: bin check/installed/curl ## install (download) binary with provi
 	if [ -z "$$INSTALL_BIN_VERSION_ARG" ]; then \
 		INSTALL_BIN_VERSION_ARG="--version"; \
 	fi; \
-	if ! check_and_download_bin "$$INSTALL_BIN_NAME" "$$INSTALL_BIN_VERSION_ARG" "$$INSTALL_BIN_VERSION" "$$INSTALL_BIN_URL"; then \
+	if ! check_and_download_bin "$$INSTALL_BIN_URL" "$$INSTALL_BIN_NAME" "$$INSTALL_BIN_VERSION_ARG" "$$INSTALL_BIN_VERSION"; then \
 		exit 1; \
 	fi
 

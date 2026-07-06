@@ -1,8 +1,44 @@
 include *.mk
 
-_test/install/common: install/jq install/yq
+DUMMY_BIN = dummy
+DUMMY_FULL_BIN = $(BINARIES_PATH)/$(DUMMY_BIN)
+
+_test/install/dummy: export INSTALL_BIN_NAME = $(DUMMY_BIN)
+_test/install/dummy: export INSTALL_BIN_VERSION_ARG = ver
+_test/install/dummy: export INSTALL_BIN_VERSION = 0.0.1
+_test/install/dummy:
+	@function get_dummy() { \
+		local ver="$$1"; \
+		local arch="$$2"; \
+		local os="$$3"; \
+		local name="$$4"; \
+		local dest="$$5"; \
+		local pt="$$6"; \
+    	{ \
+        	echo -n "#"; \
+        	echo '!/usr/bin/env bash'; \
+			echo 'if [[ $$1 == "ver" ]]; then'; \
+			echo -n '  echo "'; \
+			echo -n "name=$$name; path=$$pt; arch=$$arch; os=$$os; v$$ver"; \
+			echo '"'; \
+			echo 'fi'; \
+    	} > "$$dest"; \
+	}; \
+	${INCLUDE_CHECK_BINARY} \
+	if ! check_and_get_bin get_dummy; then \
+		exit 1; \
+	fi; \
+	if [ ! -x "$(DUMMY_FULL_BIN)" ]; then \
+		exit_with_err "$(DUMMY_FULL_BIN) is not executable"; \
+	fi
+
+_clean/dummy:
+	@rm -fv "$(DUMMY_FULL_BIN)"
+
+_test/install/common: install/jq install/yq _test/install/dummy
 	@$(MAKE) install/jq
 	@$(MAKE) install/yq
+	@$(MAKE) _test/install/dummy
 
 _test/common/duration:
 	@start="$$(${NOW_MICROSECONDS})"; \
@@ -265,6 +301,6 @@ _test/trim:
 	echo "'$$m'";\
 	echo "'$$n'"
 
-_test/clean: clean/common clean/build
+_test/clean: clean/common clean/build _clean/dummy
 
 _test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/split _test/trim _test/clean

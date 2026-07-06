@@ -66,7 +66,7 @@ Checkout to target version:
 ```
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.4.0 && git pull
+git fetch -a && git checkout v0.5.0 && git pull
 popd
 ```
 
@@ -299,6 +299,7 @@ Next definitions can be included multiple times because sh redeclare function wi
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
+
   Example:
   ```Makefile
   include *.mk
@@ -351,17 +352,35 @@ Next definitions can be included multiple times because sh redeclare function wi
     - `check_and_download_bin` - check that binary is exists in `BINARIES_PATH` and executable and have correct version
                                  if not - download.
         Arguments:
-        - `$1` - binary name without path
-        - `$2` - version argument passed in binary for extract version
-        - `$3` - version to check. Function uses grep for match version
-        - `$4` - url to download. Can be contains next string for substitution
+        - `$1` - url to download. Can be contains next string for substitution
                - `@BIN_VER@ ` - replace to version passed via `$3`
                - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin) 
                - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64) 
+        - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
+        - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
+        - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+        if binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+    - `check_and_get_bin` - check that binary is exists in `BINARIES_PATH` and executable and have correct version
+                            if not - call passed function for get binary.
+        Arguments:
+        - `$1` - function name for get binary. Function pass next args to get function
+               - `$1` - version of binary
+               - `$2` - arch (amd64 or arm64)
+               - `$3` - os (linux or darwin) 
+               - `$4` - binary name only 
+               - `$5` - full binary path
+               - `$6` - binaries path $(BINARIES_PATH) 
+        - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
+        - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
+        - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
         if binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
   Example:
   ```Makefile
   include *.mk
+
+  DUMMY_BIN = dummy
+  DUMMY_FULL_BIN = $(BINARIES_PATH)/$(DUMMY_BIN)
+
   ifeq ($(OS_CALCULATED), $(OS_LINUX))
   	JQ_PLATFORM = OS_LINUX
   else ifeq ($(OS_CALCULATED), $(OS_MACOS))
@@ -385,6 +404,34 @@ Next definitions can be included multiple times because sh redeclare function wi
   	if ! check_and_download_bin jq "--version" "4.0.0" "$$url"; then \
 			exit 1; \
 		fi
+  _test/install/dummy: export INSTALL_BIN_NAME = $(DUMMY_BIN)
+  _test/install/dummy: export INSTALL_BIN_VERSION_ARG = ver
+  _test/install/dummy: export INSTALL_BIN_VERSION = 0.0.1
+  _test/install/dummy:
+  	@function get_dummy() { \
+  		local ver="$$1"; \
+  		local arch="$$2"; \
+  		local os="$$3"; \
+  		local name="$$4"; \
+  		local dest="$$5"; \
+  		local pt="$$6"; \
+  		{ \
+  			echo -n "#"; \
+  			echo '!/usr/bin/env bash'; \
+  			echo 'if [[ $$1 == "ver" ]]; then'; \
+  			echo -n '  echo "'; \
+  			echo -n "name=$$name; path=$$pt; arch=$$arch; os=$$os; v$$ver"; \
+  			echo '"'; \
+  			echo 'fi'; \
+  		} > "$$dest"; \
+  	}; \
+  	${INCLUDE_CHECK_BINARY} \
+  	if ! check_and_get_bin get_dummy; then \
+  		exit 1; \
+  	fi; \
+  	if [ ! -x "$(DUMMY_FULL_BIN)" ]; then \
+  		exit_with_err "$(DUMMY_FULL_BIN) is not executable"; \
+  	fi
   ```
 
 - `INCLUDE_BUILD_OUT_NAME` - add next sh function:
@@ -398,6 +445,7 @@ Next definitions can be included multiple times because sh redeclare function wi
              Should be `amd64` or `arm64`
       Print in format `${project}-${platform}-${arch}`.
       If have errors - returns 1 and output error to stderr
+      
       Example:
       ```Makefile
       include *.mk
@@ -481,14 +529,17 @@ Targets:
 - `common/git/check/gitignore` - check that gitignore file contains another gitignore files rules.
    Usefully for checking in another includes repos and root makefile that all gitignore rules
    were added to root `.gitignore` file.
+   
    Params:
    - `ROOT_GITIGNORE`=*PATH* - path to gitignore file for check (root .gitignore). Default `$(CURDIR)/.gitignore`
    - `GITIGNORES_WITH_REQUIRED_RULES`=*PATHS...* - comma separated paths to gitignore files that should contains `ROOT_GITIGNORE`.
 - `common/git/check/has-diff` - check that repo has difference
+  
   Params:
   - `TARGET_NAME`    - if passed run make target before git check. Optional
   - `FILES_TO_CHECK` - comma separated paths regexp for check. Optional
   - `FILES_TO_SKIP`  - comma separated paths regexp for skip. Optional. Has higher priority.
+  
   Examples:
   ```bash
   make common/git/check/has-diff FILES_TO_SKIP=".*.mk" FILES_TO_CHECK=".*.mk" TARGET_NAME="build/dir"
