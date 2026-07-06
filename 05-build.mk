@@ -22,19 +22,19 @@ BUILD_PATH = $(abspath $(SET_BUILD_PATH))
 #   include *.mk
 #   export BUILD_PROJECT = test
 #   build/name/default:
-#	    @${INCLUDE_BUILD_OUT_NAME} \
-#       if ! name="$$(build_out_name)"; then \
-#	      exit 1; \
-#	    fi; \
-#       echo "$$name"
+# 		@${INCLUDE_BUILD_OUT_NAME} \
+# 		if ! name="$$(build_out_name)"; then \
+# 			exit 1; \
+# 		fi; \
+# 		echo "$$name"
 #   build/name/mac: export BUILD_OS = $(OS_MACOS)
 #   build/name/mac: export BUILD_ARCH = $(ARCH_ARM)
 #   build/name/mac:
-#	    @${INCLUDE_BUILD_OUT_NAME} \
-#       if ! name="$$(build_out_name)"; then \
-#	      exit 1; \
-#	    fi; \
-#       echo "$$name"
+# 		@${INCLUDE_BUILD_OUT_NAME} \
+# 		if ! name="$$(build_out_name)"; then \
+# 			exit 1; \
+# 		fi; \
+# 		echo "$$name"
 # Can be included multiple times because sh redeclare function without error
 define INCLUDE_BUILD_OUT_NAME
 ${INCLUDE_ECHO} \
