@@ -225,6 +225,46 @@ _test/echo:
 	${INCLUDE_ECHO} \
 	echo_info "After second include"
 
+_test/split:
+	@${INCLUDE_SPLIT} \
+	function print_arr() { \
+		local function_array=("$$@"); \
+    	for item in "$${function_array[@]}"; do \
+        	echo "Value: '$$item'"; \
+    	done; \
+	}; \
+	comma="a,b c,d"; \
+	split_by_comma "comma_arr" "$$comma"; \
+	echo "Comma-separated:"; \
+	print_arr "$${comma_arr[@]}"; \
+	new_line=$$'Hello with\n Name'; \
+	split_by_new_line "new_line_arr" "$$new_line"; \
+	echo "New line-separated:"; \
+	print_arr "$${new_line_arr[@]}"; \
+	spaces=$$'val ba bbval\nccc'; \
+	split_by_space "spaces_arr" "$$spaces"; \
+	echo "Spaces-separated:"; \
+	print_arr "$${spaces_arr[@]}"; \
+	own=$$'val ba. bbval\nccc'; \
+	split_by '.' "own_arr" "$$own"; \
+	echo "Dot-separated:"; \
+	print_arr "$${own_arr[@]}"; \
+	multi=$$'val ba\n b|||bval|||ccc'; \
+	split_by '|||' "multi_arr" "$$multi"; \
+	echo "Multi-separated:"; \
+	print_arr "$${multi_arr[@]}"
+
+_test/trim:
+	@${INCLUDE_SPLIT} \
+	b="$$(trim_spaces $$'\n  \t\n\t   from begin')"; \
+	e="$$(trim_spaces $$'from end\n  \t\n\t  ')"; \
+	m="$$(trim_spaces $$'\n  \t\n\tin middle\n  \t\n\t  ')"; \
+	n="$$(trim_spaces "no trim")"; \
+	echo "'$$b'";\
+	echo "'$$e'";\
+	echo "'$$m'";\
+	echo "'$$n'"
+
 _test/clean: clean/common clean/build
 
-_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/clean
+_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/split _test/trim _test/clean

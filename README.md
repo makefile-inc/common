@@ -235,7 +235,7 @@ do/some:
 
   ${\color{red}Do \space with \space fail \space 02.023318s}$
 
-#### Scripts includes
+#### Utils bash-functions includes
 
 Next definitions add bash functions definitions, which can cal in one line bash targets, like:
 ```Makefile
@@ -272,7 +272,75 @@ Next definitions can be included multiple times because sh redeclare function wi
 		@${INCLUDE_ECHO} \
   	exit_with_err "Fail!" 3
   ```
-
+- `INCLUDE_SPLIT` - add next sh functions:
+    - `trim_spaces_left` - trim whitespaces from left
+      Arguments:
+      - `$1` - string to trim
+    - `trim_spaces_right` - trim whitespaces from right
+      Arguments:
+      - `$1` - string to trim
+    - `trim_spaces` - trim whitespaces from right and left
+      Arguments:
+      - `$1` - string to trim
+    - `split_by` - split string by separator to global array
+      Arguments:
+      - `$1` - separator (can be multi-character)
+      - `$2` - name of destination array variable
+      - `$3` - string to split
+    - `split_by_comma` - split string by comma-separator to global array
+      Arguments:
+      - `$1` - name of destination array variable
+      - `$2` - string to split
+    - `split_by_space` - split string by space-separator to global array
+      Arguments:
+      - `$1` - name of destination array variable
+      - `$2` - string to split
+    - `split_by_new_line` - split string by new-line-separator to global array
+      Arguments:
+      - `$1` - name of destination array variable
+      - `$2` - string to split
+  Example:
+  ```Makefile
+  include *.mk
+  test/trim:
+  	@${INCLUDE_SPLIT} \
+  	b="$$(trim_spaces $$'\n  \t\n\t   from begin')"; \
+  	e="$$(trim_spaces $$'from end\n  \t\n\t  ')"; \
+  	m="$$(trim_spaces $$'\n  \t\n\tin middle\n  \t\n\t  ')"; \
+  	n="$$(trim_spaces "no trim")"; \
+  	echo "'$$b'";\
+  	echo "'$$e'";\
+  	echo "'$$m'";\
+  	echo "'$$n'"
+  test/split:
+  	@${INCLUDE_SPLIT} \
+  	function print_arr() { \
+  		local function_array=("$$@"); \
+  		for item in "$${function_array[@]}"; do \
+  			echo "Value: '$$item'"; \
+  		done; \
+  	}; \
+  	comma="a,b c,d"; \
+  	split_by_comma "comma_arr" "$$comma"; \
+  	echo "Comma-separated:"; \
+  	print_arr "$${comma_arr[@]}"; \
+  	new_line=$$'Hello with\n Name'; \
+  	split_by_new_line "new_line_arr" "$$new_line"; \
+  	echo "New line-separated:"; \
+  	print_arr "$${new_line_arr[@]}"; \
+  	spaces=$$'val ba bbval\nccc'; \
+  	split_by_space "spaces_arr" "$$spaces"; \
+  	echo "Spaces-separated:"; \
+  	print_arr "$${spaces_arr[@]}"; \
+  	own=$$'val ba. bbval\nccc'; \
+  	split_by '.' "own_arr" "$$own"; \
+  	echo "Dot-separated:"; \
+  	print_arr "$${own_arr[@]}"; \
+  	multi=$$'val ba\n b|||bval|||ccc'; \
+  	split_by '|||' "multi_arr" "$$multi"; \
+  	echo "Multi-separated:"; \
+  	print_arr "$${multi_arr[@]}"
+  ```
 - `INCLUDE_CHECK_BINARY` - add next sh function (`INCLUDE_ECHO` also included):
     - `check_binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version.
         Arguments:
