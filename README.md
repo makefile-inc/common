@@ -5,7 +5,7 @@ Common makefiles includes for another Makefile and target repos
 ## Dependencies
 
 Should be installed:
-- `bash` >= 4.X.X
+- `bash` >= 4.2
 - `make`
 - `awk`. For MacOS should installed `gawk`
 - `curl` - it needs for download dependencies. By default, targets that needs curl
@@ -66,7 +66,7 @@ Checkout to target version:
 ```
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.5.0 && git pull
+git fetch -a && git checkout v0.6.0 && git pull
 popd
 ```
 
@@ -76,7 +76,7 @@ Include in root Makefile in the next way:
 include $(CURDIR)/makefile-common/include.mk.inc
 ```
 
-**WARNING! If you use submodule and github actions, add to checkout action checkout submodules `submodules: "true"`, like:**
+**WARNING! If you use submodule and github actions, add to checkout action checkout submodules `submodules: "recursive"`, like:**
 ```yaml
 ...
     steps:
@@ -85,7 +85,7 @@ include $(CURDIR)/makefile-common/include.mk.inc
         uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
-          submodules: "true"
+          submodules: "recursive"
           ref: ${{ github.event.pull_request.head.sha }}
 ...
 ``` 
@@ -287,18 +287,22 @@ Next definitions can be included multiple times because sh redeclare function wi
       - `$1` - separator (can be multi-character)
       - `$2` - name of destination array variable
       - `$3` - string to split
+      - `$4` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
     - `split_by_comma` - split string by comma-separator to global array
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
+      - `$3` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
     - `split_by_space` - split string by space-separator to global array
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
+      - `$3` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
     - `split_by_new_line` - split string by new-line-separator to global array
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
+      - `$3` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
 
   Example:
   ```Makefile
@@ -317,9 +321,16 @@ Next definitions can be included multiple times because sh redeclare function wi
   	@${INCLUDE_SPLIT} \
   	function print_arr() { \
   		local function_array=("$$@"); \
+  		if [ "$${#function_array[@]}" -eq 0 ]; then \
+  			echo "Got empty array"; \
+  			return; \
+  		fi; \
   		for item in "$${function_array[@]}"; do \
-  			echo "Value: '$$item'"; \
-  		done; \
+    			echo "Value: '$$item'"; \
+    	done; \
+  	}; \
+  	function own_transform_fun() { \
+  		echo -n "transformed: '$${1:-}'"; \
   	}; \
   	comma="a,b c,d"; \
   	split_by_comma "comma_arr" "$$comma"; \
@@ -341,6 +352,31 @@ Next definitions can be included multiple times because sh redeclare function wi
   	split_by '|||' "multi_arr" "$$multi"; \
   	echo "Multi-separated:"; \
   	print_arr "$${multi_arr[@]}"
+  	print_arr "$${multi_arr[@]}"; \
+  	empty=""; \
+  	split_by_comma "empty_arr" "$$empty"; \
+  	echo "Empty:"; \
+  	print_arr "$${empty_arr[@]}"; \
+  	trim_left=$$'a, b b,,  c,\n d ,e f,'; \
+  	split_by_comma "trim_left_arr" "$$trim_left" "trim_spaces_left"; \
+  	echo "Transform trim left:"; \
+  	print_arr "$${trim_left_arr[@]}"; \
+  	trim_right=$$'a ,b b ,  c  ,d \n,e f'; \
+  	split_by_comma "trim_right_arr" "$$trim_right" "trim_spaces_right"; \
+  	echo "Transform trim right:"; \
+  	print_arr "$${trim_right_arr[@]}"; \
+  	trim_all=$$' a , b b ,  c,\n d \n,e f,g '; \
+  	split_by_comma "trim_all_arr" "$$trim_all" "trim_spaces"; \
+  	echo "Transform trim all:"; \
+  	print_arr "$${trim_all_arr[@]}"; \
+  	trim_all_empty=""; \
+  	split_by_comma "trim_all_empty_arr" "$$trim_all_empty" "trim_spaces"; \
+  	echo "Transform trim all empty:"; \
+  	print_arr "$${trim_all_empty_arr[@]}"; \
+  	transform_own="a||b c|| de||g"; \
+  	split_by "||" "transform_own_arr" "$$transform_own" "own_transform_fun"; \
+  	echo "Transform own:"; \
+  	print_arr "$${transform_own_arr[@]}"
   ```
 - `INCLUDE_CHECK_BINARY` - add next sh function (`INCLUDE_ECHO` also included):
     - `check_binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version.
@@ -348,7 +384,8 @@ Next definitions can be included multiple times because sh redeclare function wi
         - `$1` - binary name without path
         - `$2` - version argument for binary for extract version
         - `$3` - version to check. Function uses grep for match version
-        if binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+
+        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
     - `check_and_download_bin` - check that binary is exists in `BINARIES_PATH` and executable and have correct version
                                  if not - download.
         Arguments:
@@ -359,7 +396,8 @@ Next definitions can be included multiple times because sh redeclare function wi
         - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
         - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
         - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
-        if binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+
+        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
     - `check_and_get_bin` - check that binary is exists in `BINARIES_PATH` and executable and have correct version
                             if not - call passed function for get binary.
         Arguments:
@@ -373,7 +411,9 @@ Next definitions can be included multiple times because sh redeclare function wi
         - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
         - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
         - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
-        if binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+
+        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+
   Example:
   ```Makefile
   include *.mk
@@ -442,7 +482,8 @@ Next definitions can be included multiple times because sh redeclare function wi
              Also can be passed via env `BUILD_OS`. Should be `linux` or `darwin`.
       - `$3` - arch name. Optional. By default get from `$(ARCH_CALCULATED)`.
              Also can be passed via env `BUILD_ARCH`
-             Should be `amd64` or `arm64`
+             Should be `amd64` or `arm64`.
+
       Print in format `${project}-${platform}-${arch}`.
       If have errors - returns 1 and output error to stderr
       
@@ -464,7 +505,36 @@ Next definitions can be included multiple times because sh redeclare function wi
 	    		exit 1; \
 	    	fi; \
       	echo "$$name"
+- `INCLUDE_BIN_DYNAMIC` - add next sh function:
+   - `check_dynamic_executable` - check that binary is dynamic linked or not
+      Arguments:
+      - `$1` - binary path. Required. Also can be passed via env `TARGET_BIN_TO_CHECK`
+      - `$2` - if not empty check that executable is dynamic-linked, otherwise that static linked
+              Also can be passed via env `TARGET_BIN_SHOULD_DYNAMIC`
+              Optional.
 
+      If have argument errors - returns 2, returns 1 if executable not/is dynamic-linked depended on `$2`
+      If executable linked correct returns 0.
+
+  Example:
+  ```Makefile
+  include *.mk
+
+  check/dynamic: export TARGET_BIN_TO_CHECK = $(BUILD_PATH)/app-dynamic
+  check/dynamic: export TARGET_BIN_SHOULD_DYNAMIC = true
+  check/dynamic:
+  	@${INCLUDE_BIN_DYNAMIC} \
+  	if ! check_dynamic_executable; then \
+  		exit 1; \
+  	fi
+
+  check/static: export TARGET_BIN_TO_CHECK = $(BUILD_PATH)/app-static
+  check/static:
+  	@${INCLUDE_BIN_DYNAMIC} \
+  	if ! check_dynamic_executable; then \
+  		exit 1; \
+  	fi
+  ```
 ## Targets
 
 ### Help
@@ -477,6 +547,7 @@ Next definitions can be included multiple times because sh redeclare function wi
 - `bin` - create `BINARIES_PATH`
 - `install/binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version, if not - download.
   **WARNING! Call this target with recursive call make to prevent skip run target in another targets multiple times!**
+
   Params:
   - `INSTALL_BIN_NAME`=*NAME* - name of binary in `BINARIES_PATH`
 	- `INSTALL_BIN_VERSION`=*VERSION* - version of binary
@@ -500,7 +571,26 @@ Next definitions can be included multiple times because sh redeclare function wi
 - `install/jq` - install [jq](https://github.com/jqlang/jq) to local bin path
 - `install/yq` - install [yq](https://github.com/mikefarah/yq) to local bin path
 - `clean/common` - remove binaries installed with common package (`yq` and `jq` now)
+- `check/bin/linked/dynamic` - check that executable is dynamic-linked
 
+   Params:
+   - `TARGET_BIN_TO_CHECK`=*PATH* - path to executable to check
+
+   Example:
+    ```Makefile
+    check/dynamic: export TARGET_BIN_TO_CHECK = $(BUILD_PATH)/app-dynamic
+    check/dynamic: check/bin/linked/dynamic
+    ```
+- `check/bin/linked/static` - heck that executable is static-linked
+
+   Params:
+   - `TARGET_BIN_TO_CHECK`=*PATH* - path to executable to check
+
+   Example:
+    ```Makefile
+    check/static: export TARGET_BIN_TO_CHECK = $(BUILD_PATH)/app-static
+    check/static: check/bin/linked/static
+    ```
 ### Build
 
 Next targets are generic targets for build binaries. Before run creates `BUILD_PATH` dir.

@@ -112,7 +112,7 @@ function echo_warn() { \
 	echo -e "${YELLOW_COLOR}$${1:-}${NO_COLOR}" >&2; \
 }; \
 function exit_with_err() { \
-	exit_code="${2:-}"; \
+	local exit_code="${2:-}"; \
 	if [ -z "$$exit_code" ]; then \
 		exit_code="1"; \
 	fi; \
@@ -139,18 +139,22 @@ endef
 #       $1 - separator (can be multi-character)
 #       $2 - name of destination array variable
 #       $3 - string to split
+#       $4 - function name to transform all values (like trim_spaces). got string argument and returns string. Optional
 #   split_by_comma - split string by comma-separator to global array
 #     Arguments:
 #       $1 - name of destination array variable
 #       $2 - string to split
+#       $3 - function name to transform all values (like trim_spaces). got string argument and returns string. Optional
 #   split_by_space - split string by space-separator to global array
 #     Arguments:
 #       $1 - name of destination array variable
 #       $2 - string to split
+#       $3 - function name to transform all values (like trim_spaces). got string argument and returns string. Optional
 #   split_by_new_line - split string by new-line-separator to global array
 #     Arguments:
 #       $1 - name of destination array variable
 #       $2 - string to split
+#       $3 - function name to transform all values (like trim_spaces). got string argument and returns string. Optional
 # Example include:
 #   @${INCLUDE_ECHO} \ - slash is required!
 # Example:
@@ -167,12 +171,19 @@ endef
 # 	    echo "'$$n'"
 # 	test/split:
 # 		@${INCLUDE_SPLIT} \
-# 		function print_arr() { \
-# 			local function_array=("$$@"); \
-# 			for item in "$${function_array[@]}"; do \
-# 				echo "Value: '$$item'"; \
-# 			done; \
-# 		}; \
+#		function print_arr() { \
+#			local function_array=("$$@"); \
+#			if [ "$${#function_array[@]}" -eq 0 ]; then \
+#				echo "Got empty array"; \
+#				return; \
+#			fi; \
+#    		for item in "$${function_array[@]}"; do \
+#        		echo "Value: '$$item'"; \
+#    		done; \
+#		}; \
+#		function own_transform_fun() { \
+#			echo -n "transformed: '$${1:-}'"; \
+#		}; \
 # 		comma="a,b c,d"; \
 # 		split_by_comma "comma_arr" "$$comma"; \
 # 		echo "Comma-separated:"; \
@@ -193,6 +204,31 @@ endef
 # 		split_by '|||' "multi_arr" "$$multi"; \
 # 		echo "Multi-separated:"; \
 # 		print_arr "$${multi_arr[@]}"
+#		print_arr "$${multi_arr[@]}"; \
+#		empty=""; \
+#		split_by_comma "empty_arr" "$$empty"; \
+#		echo "Empty:"; \
+#		print_arr "$${empty_arr[@]}"; \
+#		trim_left=$$'a, b b,,  c,\n d ,e f,'; \
+#		split_by_comma "trim_left_arr" "$$trim_left" "trim_spaces_left"; \
+#		echo "Transform trim left:"; \
+#		print_arr "$${trim_left_arr[@]}"; \
+#		trim_right=$$'a ,b b ,  c  ,d \n,e f'; \
+#		split_by_comma "trim_right_arr" "$$trim_right" "trim_spaces_right"; \
+#		echo "Transform trim right:"; \
+#		print_arr "$${trim_right_arr[@]}"; \
+#		trim_all=$$' a , b b ,  c,\n d \n,e f,g '; \
+#		split_by_comma "trim_all_arr" "$$trim_all" "trim_spaces"; \
+#		echo "Transform trim all:"; \
+#		print_arr "$${trim_all_arr[@]}"; \
+#		trim_all_empty=""; \
+#		split_by_comma "trim_all_empty_arr" "$$trim_all_empty" "trim_spaces"; \
+#		echo "Transform trim all empty:"; \
+#		print_arr "$${trim_all_empty_arr[@]}"; \
+#		transform_own="a||b c|| de||g"; \
+#		split_by "||" "transform_own_arr" "$$transform_own" "own_transform_fun"; \
+#		echo "Transform own:"; \
+#		print_arr "$${transform_own_arr[@]}"
 # Can be included multiple times because sh redeclare function without error
 define INCLUDE_SPLIT
 function trim_spaces_left() { \
@@ -223,21 +259,31 @@ function split_by() { \
 	fi; \
 	local _str="$${3:-}"; \
 	readarray -t -d '' "$$_dest" < <(sed -z "s/$$_sep/\x00/g" < <(printf '%s' "$$_str")); \
+	local _transform="$${4:-}"; \
+	if [ -n "$$_transform" ]; then \
+		local -n target_array="$$_dest"; \
+		for _indx in "$${!target_array[@]}"; do \
+    		target_array[_indx]="$$("$$_transform" "$${target_array[_indx]}")"; \
+		done; \
+	fi; \
 }; \
 function split_by_comma() { \
 	local _dest="$${1:-}"; \
 	local _str="$${2:-}"; \
-	split_by ',' "$$_dest" "$$_str"; \
+	local _transform="$${3:-}"; \
+	split_by ',' "$$_dest" "$$_str" "$$_transform"; \
 }; \
 function split_by_space() { \
 	local _dest="$${1:-}"; \
 	local _str="$${2:-}"; \
-	split_by ' ' "$$_dest" "$$_str"; \
+	local _transform="$${3:-}"; \
+	split_by ' ' "$$_dest" "$$_str" "$$_transform"; \
 }; \
 function split_by_new_line() { \
 	local _dest="$${1:-}"; \
 	local _str="$${2:-}"; \
-	split_by $$'\n' "$$_dest" "$$_str"; \
+	local _transform="$${3:-}"; \
+	split_by $$'\n' "$$_dest" "$$_str" "$$_transform"; \
 };
 endef
 

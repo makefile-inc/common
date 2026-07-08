@@ -3,7 +3,8 @@
 common/git/check/gitignore: ## Check that gitignore file contains another gitignor files rules.
 	@##~ ROOT_GITIGNORE=PATH - path to gitignore file for check. Default $(CURDIR)/.gitignore
 	@##~ GITIGNORES_WITH_REQUIRED_RULES=PATHS... - comma separated paths to gitignore files that should contains ROOT_GITIGNORE
-	@root_gitignore="$$ROOT_GITIGNORE"; \
+	@${INCLUDE_SPLIT} \
+	root_gitignore="$$ROOT_GITIGNORE"; \
 	if [ -z "$$root_gitignore" ]; then \
 		root_gitignore="$(CURDIR)/.gitignore"; \
 	fi; \
@@ -16,7 +17,7 @@ common/git/check/gitignore: ## Check that gitignore file contains another gitign
 		exit 1; \
 	fi; \
 	echo -e "${GREEN_COLOR}Use root .gitignore as $$root_gitignore${NO_COLOR}"; \
-	IFS=',' read -r -a gitignores_list <<< "$$GITIGNORES_WITH_REQUIRED_RULES"; \
+	split_by_comma "gitignores_list" "$$GITIGNORES_WITH_REQUIRED_RULES" "trim_spaces"; \
 	if [[ "$${#gitignores_list[@]}" == "0" ]]; then \
 		echo -e "${RED_COLOR}GITIGNORES_WITH_REQUIRED_RULES have empty list${NO_COLOR}"; \
 		exit 1; \
@@ -77,6 +78,7 @@ common/git/check/has-diff: ## Check diff in repo
 	@##~ FILES_TO_CHECK=PATHS... - comma separated paths regexp for check. Can be not passed
 	@##~ FILES_TO_SKIP=PATHS... - comma separated paths regexp for skip. Can be not passed
 	@${INCLUDE_ECHO} \
+	${INCLUDE_SPLIT} \
 	set -Eeuo pipefail; \
 	target_name="$${TARGET_NAME:-}"; \
 	if [ -n "$$target_name" ]; then \
@@ -85,15 +87,14 @@ common/git/check/has-diff: ## Check diff in repo
 			exit_with_err "$$target_name was failed" 2; \
 		fi; \
 	fi; \
-	patterns_for_check=(); \
 	files_check="$${FILES_TO_CHECK:-}"; \
 	if [ -n "$$files_check" ]; then \
-		IFS=',' read -r -a patterns_for_check <<< "$$files_check"; \
+		split_by_comma "patterns_for_check" "$$files_check" "trim_spaces"; \
 	fi; \
 	patterns_for_skip=(); \
 	files_skip="$${FILES_TO_SKIP:-}"; \
 	if [ -n "$$files_skip" ]; then \
-		IFS=',' read -r -a patterns_for_skip <<< "$$files_skip"; \
+		split_by_comma "patterns_for_skip" "$$files_skip" "trim_spaces"; \
 	fi; \
 	output="$$(git diff --name-status | cut -f 2 | sort)"; \
 	if [ -z "$$output" ]; then \
