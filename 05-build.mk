@@ -39,9 +39,9 @@ BUILD_PATH = $(abspath $(SET_BUILD_PATH))
 define INCLUDE_BUILD_OUT_NAME
 ${INCLUDE_ECHO} \
 function build_out_name() { \
-	project="$$1"; \
-	platform="$$2"; \
-	arch="$$3"; \
+	local project="$${1:-}"; \
+	local platform="$${2:-}"; \
+	local arch="$${3:-}"; \
 	if [ -z "$$project" ]; then \
   		if [ -n "$$PROJECT_NAME" ]; then \
 			project="$$PROJECT_NAME"; \
@@ -57,7 +57,7 @@ function build_out_name() { \
 			platform="$(OS_CALCULATED)"; \
   		fi; \
 	fi; \
-	platform_found=""; \
+	local platform_found=""; \
 	for platform_i in $(AVAILABLE_OSES); do \
 		if [ "$$platform_i" = "$$platform" ]; then \
 			platform_found="true"; \
@@ -75,7 +75,7 @@ function build_out_name() { \
 			arch="$(ARCH_CALCULATED)"; \
   		fi; \
 	fi; \
-	arch_found=""; \
+	local arch_found=""; \
 	for arch_i in $(AVAILABLE_ARCHS); do \
 		if [ "$$arch_i" = "$$arch" ]; then \
 			arch_found="true"; \

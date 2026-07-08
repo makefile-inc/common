@@ -265,9 +265,16 @@ _test/split:
 	@${INCLUDE_SPLIT} \
 	function print_arr() { \
 		local function_array=("$$@"); \
+		if [ "$${#function_array[@]}" -eq 0 ]; then \
+			echo "Got empty array"; \
+			return; \
+		fi; \
     	for item in "$${function_array[@]}"; do \
         	echo "Value: '$$item'"; \
     	done; \
+	}; \
+	function own_transform_fun() { \
+		echo -n "transformed: '$${1:-}'"; \
 	}; \
 	comma="a,b c,d"; \
 	split_by_comma "comma_arr" "$$comma"; \
@@ -288,7 +295,31 @@ _test/split:
 	multi=$$'val ba\n b|||bval|||ccc'; \
 	split_by '|||' "multi_arr" "$$multi"; \
 	echo "Multi-separated:"; \
-	print_arr "$${multi_arr[@]}"
+	print_arr "$${multi_arr[@]}"; \
+	empty=""; \
+	split_by_comma "empty_arr" "$$empty"; \
+	echo "Empty:"; \
+	print_arr "$${empty_arr[@]}"; \
+	trim_left=$$'a, b b,,  c,\n d ,e f,'; \
+	split_by_comma "trim_left_arr" "$$trim_left" "trim_spaces_left"; \
+	echo "Transform trim left:"; \
+	print_arr "$${trim_left_arr[@]}"; \
+	trim_right=$$'a ,b b ,  c  ,d \n,e f'; \
+	split_by_comma "trim_right_arr" "$$trim_right" "trim_spaces_right"; \
+	echo "Transform trim right:"; \
+	print_arr "$${trim_right_arr[@]}"; \
+	trim_all=$$' a , b b ,  c,\n d \n,e f,g '; \
+	split_by_comma "trim_all_arr" "$$trim_all" "trim_spaces"; \
+	echo "Transform trim all:"; \
+	print_arr "$${trim_all_arr[@]}"; \
+	trim_all_empty=""; \
+	split_by_comma "trim_all_empty_arr" "$$trim_all_empty" "trim_spaces"; \
+	echo "Transform trim all empty:"; \
+	print_arr "$${trim_all_empty_arr[@]}"; \
+	transform_own="a||b c|| de||g"; \
+	split_by "||" "transform_own_arr" "$$transform_own" "own_transform_fun"; \
+	echo "Transform own:"; \
+	print_arr "$${transform_own_arr[@]}"
 
 _test/trim:
 	@${INCLUDE_SPLIT} \
@@ -301,6 +332,19 @@ _test/trim:
 	echo "'$$m'";\
 	echo "'$$n'"
 
+_test/dynamic/ok: check/installed/curl
+	@export TARGET_BIN_TO_CHECK="$$(command -v curl)"; \
+	$(MAKE) check/bin/linked/dynamic
+
+_test/dynamic/fail: check/installed/curl
+	@export TARGET_BIN_TO_CHECK="$$(command -v curl)"; \
+	if $(MAKE) build/check/bin/static; then \
+		echo "check/bin/linked/static for curl should fail"; \
+		exit 1; \
+	fi
+
+_test/executable: _test/dynamic/ok _test/dynamic/fail
+
 _test/clean: clean/common clean/build _clean/dummy
 
-_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/split _test/trim _test/clean
+_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/trim _test/split _test/clean _test/executable

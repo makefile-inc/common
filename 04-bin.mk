@@ -224,6 +224,73 @@ function check_and_get_bin() { \
 };
 endef
 
+# INCLUDE_BIN_DYNAMIC - add next sh function:
+#   check_dynamic_executable - check that binary is dynamic linked or not
+#     Arguments:
+#       $1 - binary path. Required. Also can be passed via env TARGET_BIN_TO_CHECK
+#       $2 - if not empty check that executable is dynamic-linked, otherwise that static linked
+#            Also can be passed via env TARGET_BIN_SHOULD_DYNAMIC
+#	         Optional.
+#   if have argument errors - returns 2, returns 1 if executable not/is dynamic-linked depended on $2
+#   If executable linked correct returns 0
+# Example include:
+#   @${INCLUDE_BIN_DYNAMIC} \ - slash is required!
+# Example:
+#   include *.mk
+#
+#   check/dynamic: export TARGET_BIN_TO_CHECK = $(BUILD_PATH)/app-dynamic
+#   check/dynamic: export TARGET_BIN_SHOULD_DYNAMIC = true
+#   check/dynamic:
+# 		@${INCLUDE_BIN_DYNAMIC} \
+# 		if ! check_dynamic_executable; then \
+# 			exit 1; \
+# 		fi
+#
+#   check/static: export TARGET_BIN_TO_CHECK = $(BUILD_PATH)/app-static
+#   check/static:
+# 		@${INCLUDE_BIN_DYNAMIC} \
+# 		if ! check_dynamic_executable; then \
+# 			exit 1; \
+# 		fi
+# Can be included multiple times because sh redeclare function without error
+define INCLUDE_BIN_DYNAMIC
+${INCLUDE_ECHO} \
+function check_dynamic_executable() { \
+	local bin_path="$${1:-}"; \
+	if [ -z "$$bin_path" ]; then \
+		bin_path="$${TARGET_BIN_TO_CHECK:-}"; \
+  		if [ -z "$$bin_path" ]; then \
+  			echo_err "$$bin_path not passed as first arg or via TARGET_BIN_TO_CHECK env"; \
+			return 2; \
+		fi; \
+	fi; \
+	local should_dynamic="$${2:-}"; \
+	if [ -z "$$should_dynamic" ]; then \
+		should_dynamic="$${TARGET_BIN_SHOULD_DYNAMIC:-}"; \
+	fi; \
+	local full_path=""; \
+	if ! full_path="$$(realpath "$$bin_path")"; then \
+		echo_err "cannot get full path for $$bin_path"; \
+		return 2; \
+	fi; \
+	if [ ! -x "$$full_path" ]; then \
+  		echo_err "$$full_path is not executable"; \
+		return 2; \
+	fi; \
+	if [ -n "$$should_dynamic" ]; then \
+  		if ! ldd "$$full_path"; then \
+			echo_err "$$full_path is not dynamic linked but should"; \
+			return 1; \
+		fi; \
+		return 0; \
+	fi; \
+	if ldd "$$full_path"; then \
+		echo_err "$$full_path is dynamic linked but should not"; \
+		return 1; \
+	fi; \
+	return 0; \
+};
+endef
 
 # CHECK_BINARY - check that binary is exists in BINARIES_PATH and executable and have correct version
 #     Arguments:
@@ -275,6 +342,23 @@ check/installed/docker: ## docker
         echo "${RED_COLOR}docker not installed${NO_COLOR}"; \
         exit 1; \
     fi
+
+##@ Common. Check executables
+
+check/bin/linked/dynamic: export TARGET_BIN_SHOULD_DYNAMIC = true
+check/bin/linked/dynamic: ## Check that executable is dynamic-linked
+	@##~ TARGET_BIN_TO_CHECK=PATH - path to executable to check
+	@${INCLUDE_BIN_DYNAMIC} \
+	if ! check_dynamic_executable; then \
+		exit 1; \
+	fi
+
+check/bin/linked/static: ## Check that executable is static-linked
+	@##~ TARGET_BIN_TO_CHECK=PATH - path to executable to check
+	@${INCLUDE_BIN_DYNAMIC} \
+	if ! check_dynamic_executable; then \
+		exit 1; \
+	fi
 
 ##@ Common. Install binary to local bin dir
 
@@ -342,4 +426,4 @@ clean/common: ## Remove common binaries from local bin dir
 	@rm -fv "$(JQ_BIN_FULL)"
 	@rm -fv "$(YQ_BIN_FULL)"
 
-.PHONY: check/installed/curl check/installed/docker install/binary install/jq install/yq install/common/all clean/common
+.PHONY: check/installed/curl check/installed/docker install/binary install/jq install/yq install/common/all clean/common check/bin/linked/dynamic check/bin/linked/static
