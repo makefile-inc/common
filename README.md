@@ -591,6 +591,7 @@ Next definitions can be included multiple times because sh redeclare function wi
     check/static: export TARGET_BIN_TO_CHECK = $(BUILD_PATH)/app-static
     check/static: check/bin/linked/static
     ```
+
 ### Build
 
 Next targets are generic targets for build binaries. Before run creates `BUILD_PATH` dir.
@@ -623,12 +624,14 @@ Targets:
    Params:
    - `ROOT_GITIGNORE`=*PATH* - path to gitignore file for check (root .gitignore). Default `$(CURDIR)/.gitignore`
    - `GITIGNORES_WITH_REQUIRED_RULES`=*PATHS...* - comma separated paths to gitignore files that should contains `ROOT_GITIGNORE`.
+
 - `common/git/check/has-diff` - check that repo has difference
   
   Params:
-  - `TARGET_NAME`    - if passed run make target before git check. Optional
-  - `FILES_TO_CHECK` - comma separated paths regexp for check. Optional
-  - `FILES_TO_SKIP`  - comma separated paths regexp for skip. Optional. Has higher priority.
+  - `TARGET_NAME`=*NAME* - if passed run make target before git check. Optional
+  - `HAS_DIFF_MSG`=*MSG* - if has diff this message will be printed. Optional. If not passed print files.
+  - `FILES_TO_CHECK`=*REGEXPS...* - comma separated paths regexp for check. Optional
+  - `FILES_TO_SKIP`=*REGEXPS...*  - comma separated paths regexp for skip. Optional. Has higher priority.
   
   Examples:
   ```bash
