@@ -75,8 +75,9 @@ common/git/check/gitignore: ## Check that gitignore file contains another gitign
 
 common/git/check/has-diff: ## Check diff in repo
 	@##~ TARGET_NAME=NAME - if passed run make target before git diff check
-	@##~ FILES_TO_CHECK=PATHS... - comma separated paths regexp for check. Can be not passed
-	@##~ FILES_TO_SKIP=PATHS... - comma separated paths regexp for skip. Can be not passed
+	@##~ HAS_DIFF_MSG=MSG - if has diff this message will be printed. Optional
+	@##~ FILES_TO_CHECK=PATHS... - comma separated paths regexp for check. Optional
+	@##~ FILES_TO_SKIP=PATHS... - comma separated paths regexp for skip. Optional
 	@${INCLUDE_ECHO} \
 	${INCLUDE_SPLIT} \
 	set -Eeuo pipefail; \
@@ -136,6 +137,10 @@ common/git/check/has-diff: ## Check diff in repo
 	done; \
 	if [ "$${#changed[@]}" -eq 0 ]; then \
 		exit 0; \
+	fi; \
+	msg="$${HAS_DIFF_MSG:-}"; \
+	if [ -n "$$msg" ]; then \
+		exit_with_err "$$msg"; \
 	fi; \
 	echo_err "Files changed:"; \
 	for chn_f in "$${changed[@]}"; do \
