@@ -390,9 +390,9 @@ Next definitions can be included multiple times because sh redeclare function wi
                                  if not - download.
         Arguments:
         - `$1` - url to download. Can be contains next string for substitution
-               - `@BIN_VER@ ` - replace to version passed via `$3`
-               - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin) 
-               - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64) 
+          - `@BIN_VER@ ` - replace to version passed via `$3`
+          - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin) 
+          - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64) 
         - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
         - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
         - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
@@ -402,12 +402,12 @@ Next definitions can be included multiple times because sh redeclare function wi
                             if not - call passed function for get binary.
         Arguments:
         - `$1` - function name for get binary. Function pass next args to get function
-               - `$1` - version of binary
-               - `$2` - arch (amd64 or arm64)
-               - `$3` - os (linux or darwin) 
-               - `$4` - binary name only 
-               - `$5` - full binary path
-               - `$6` - binaries path $(BINARIES_PATH) 
+          - `$1` - version of binary
+          - `$2` - arch (amd64 or arm64)
+          - `$3` - os (linux or darwin) 
+          - `$4` - binary name only 
+          - `$5` - full binary path
+          - `$6` - binaries path $(BINARIES_PATH) 
         - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
         - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
         - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
