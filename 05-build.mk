@@ -172,8 +172,8 @@ common/build/all: ## Do build target for mac and linux for all arch
 	@##~     OUT_BIN - output binary
 	@##~     BUILD_OS - target os (linux, darwin)
 	@##~     BUILD_ARCH - target arch (amd64, arm64)
-	@$(MAKE) build/linux/all
-	@$(MAKE) build/mac/all
+	@$(MAKE) common/build/linux/all
+	@$(MAKE) common/build/mac/all
 
 clean/build: ## Delete build/ directory 
 	@rm -rfv "$(BUILD_PATH)"
