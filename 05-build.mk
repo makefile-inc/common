@@ -93,11 +93,11 @@ endef
 
 ##@ Common. Build
 
-build/dir: ## Make build directory
+common/build/dir: ## Make build directory
 	@##~ SET_BUILD_PATH=PATH - dir for output build binaries. By default $(CURDIR)/build
 	@mkdir -p "$(BUILD_PATH)"
 
-_build/general: build/dir
+_build/general: common/build/dir
 	@${INCLUDE_BUILD_OUT_NAME} \
 	if [ -z "$$BUILD_TARGET" ]; then \
 		exit_with_err "BUILD_TARGET is not passed"; \
@@ -110,9 +110,9 @@ _build/general: build/dir
 	export BUILD_ARCH="$$BUILD_ARCH"; \
 	${RUN_WITH_DURATION} "$$BUILD_TARGET" "Build $$bin_name"
 
-build/current: export BUILD_OS = $(OS_CALCULATED)
-build/current: export BUILD_ARCH = $(ARCH_CALCULATED)
-build/current: ## Do build target for current os and arch
+common/build/current: export BUILD_OS = $(OS_CALCULATED)
+common/build/current: export BUILD_ARCH = $(ARCH_CALCULATED)
+common/build/current: ## Do build target for current os and arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
@@ -121,9 +121,9 @@ build/current: ## Do build target for current os and arch
 	@##~     BUILD_ARCH - target arch (amd64, arm64)
 	@$(MAKE) _build/general
 
-build/linux: export BUILD_OS = $(OS_LINUX)
-build/linux: export BUILD_ARCH = $(ARCH_CALCULATED)
-build/linux: ## Do build target for linux os and current arch
+common/build/linux: export BUILD_OS = $(OS_LINUX)
+common/build/linux: export BUILD_ARCH = $(ARCH_CALCULATED)
+common/build/linux: ## Do build target for linux os and current arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
@@ -132,8 +132,8 @@ build/linux: ## Do build target for linux os and current arch
 	@##~     BUILD_ARCH - target arch (amd64, arm64)
 	@$(MAKE) _build/general
 
-build/linux/all: export BUILD_OS = $(OS_LINUX)
-build/linux/all: ## Do build target for linux for all arch
+common/build/linux/all: export BUILD_OS = $(OS_LINUX)
+common/build/linux/all: ## Do build target for linux for all arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
@@ -143,9 +143,9 @@ build/linux/all: ## Do build target for linux for all arch
 	@$(MAKE) _build/general BUILD_ARCH=$(ARCH_AMD)
 	@$(MAKE) _build/general BUILD_ARCH=$(ARCH_ARM)
 
-build/mac: export BUILD_OS = $(OS_MACOS)
-build/mac: export BUILD_ARCH = $(ARCH_ARM)
-build/mac: ## Do build target for linux os and arm arch
+common/build/mac: export BUILD_OS = $(OS_MACOS)
+common/build/mac: export BUILD_ARCH = $(ARCH_ARM)
+common/build/mac: ## Do build target for linux os and arm arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
@@ -154,8 +154,8 @@ build/mac: ## Do build target for linux os and arm arch
 	@##~     BUILD_ARCH - target arch arm64
 	@$(MAKE) _build/general
 
-build/mac/all: export BUILD_OS = $(OS_MACOS)
-build/mac/all: ## Do build target for mac for all arch
+common/build/mac/all: export BUILD_OS = $(OS_MACOS)
+common/build/mac/all: ## Do build target for mac for all arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
@@ -165,7 +165,7 @@ build/mac/all: ## Do build target for mac for all arch
 	@$(MAKE) _build/general BUILD_ARCH=$(ARCH_AMD)
 	@$(MAKE) _build/general BUILD_ARCH=$(ARCH_ARM)
 
-build/all: ## Do build target for mac and linux for all arch
+common/build/all: ## Do build target for mac and linux for all arch
 	@##~ PROJECT_NAME=NAME - name of project
 	@##~ BUILD_TARGET=NAME - name of target for build
 	@##~   Pass args to target:
@@ -178,4 +178,4 @@ build/all: ## Do build target for mac and linux for all arch
 clean/build: ## Delete build/ directory 
 	@rm -rfv "$(BUILD_PATH)"
 
-.PHONY: build/dir _build/general build/current build/linux build/linux/all build/mac build/mac/all build/all clean/build
+.PHONY: common/build/dir _build/general common/build/current common/build/linux common/build/linux/all common/build/mac common/build/mac/all common/build/all clean/build
