@@ -63,10 +63,10 @@ git submodule add git@github.com:makefile-inc/common.git makefile-common
 
 Checkout to target version:
 
-```
+```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.7.0 && git pull
+git fetch -a && git checkout v0.8.0 && git pull
 popd
 ```
 
@@ -88,7 +88,23 @@ include $(CURDIR)/makefile-common/include.mk.inc
           submodules: "recursive"
           ref: ${{ github.event.pull_request.head.sha }}
 ...
-``` 
+```
+
+## Update as submodule
+
+```bash
+cd makefile-common
+git fetch -a && git checkout NEW_TAG && git pull
+popd
+```
+
+## Post install/update
+
+Please add to `.gitignore` all entries from this repository `.gitignore`.
+
+and run `make common/git/check/gitignore GITIGNORES_WITH_REQUIRED_RULES=makefile-common/.gitignore`.
+
+Because targets generate some files which do not commit to git repo.
 
 ## Pre-definitions
 
@@ -606,14 +622,14 @@ Targets pass to `BUILD_TARGET` next params:
 - `BUILD_ARCH` - build arch (amd64 or arm64).
 
 Targets:
-- `build/dir`       - creates `BUILD_PATH` dir
-- `build/current`   - build binary for current machine os and arch
-- `build/linux`     - build binary for current machine arch linux
-- `build/linux/all` - build binary for linux and all supported arch'es
-- `build/mac`       - build binary for MacOS and arm64 arch
-- `build/mac/all`   - build binary for MacOS and all supported arch'es
-- `build/all`       - build binary for all supported os'es and arch'es
-- `clean/build`     - remove `BUILD_PATH` dir.
+- `common/build/dir`       - creates `BUILD_PATH` dir
+- `common/build/current`   - build binary for current machine os and arch
+- `common/build/linux`     - build binary for current machine arch linux
+- `common/build/linux/all` - build binary for linux and all supported arch'es
+- `common/build/mac`       - build binary for MacOS and arm64 arch
+- `common/build/mac/all`   - build binary for MacOS and all supported arch'es
+- `common/build/all`       - build binary for all supported os'es and arch'es
+- `clean/build`            - remove `BUILD_PATH` dir.
 
 ### Git
 
