@@ -66,7 +66,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.8.0 && git pull
+git fetch -a && git checkout v0.9.0 && git pull
 popd
 ```
 
