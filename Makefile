@@ -185,31 +185,31 @@ _test/build/target/fail:
 
 _test/build/bin/current: export PROJECT_NAME=build-current
 _test/build/bin/current: export BUILD_TARGET=_test/build/target/ok
-_test/build/bin/current: build/current
+_test/build/bin/current: common/build/current
 
 _test/build/bin/linux: export PROJECT_NAME=build-linux
 _test/build/bin/linux: export BUILD_TARGET=_test/build/target/ok
-_test/build/bin/linux: build/linux
+_test/build/bin/linux: common/build/linux
 
 _test/build/bin/linux/all: export PROJECT_NAME=build-linux-all
 _test/build/bin/linux/all: export BUILD_TARGET=_test/build/target/ok
-_test/build/bin/linux/all: build/linux/all
+_test/build/bin/linux/all: common/build/linux/all
 
 _test/build/bin/mac: export PROJECT_NAME=build-mac
 _test/build/bin/mac: export BUILD_TARGET=_test/build/target/ok
-_test/build/bin/mac: build/mac
+_test/build/bin/mac: common/build/mac
 
 _test/build/bin/mac/all: export PROJECT_NAME=build-mac-all
 _test/build/bin/mac/all: export BUILD_TARGET=_test/build/target/ok
-_test/build/bin/mac/all: build/mac/all
+_test/build/bin/mac/all: common/build/mac/all
 
 _test/build/bin/all: export PROJECT_NAME=build-all
 _test/build/bin/all: export BUILD_TARGET=_test/build/target/ok
-_test/build/bin/all: build/all
+_test/build/bin/all: common/build/all
 
 _test/build/bin/fail: export PROJECT_NAME=build-fail
 _test/build/bin/fail: export BUILD_TARGET=_test/build/target/fail
-_test/build/bin/fail: build/all
+_test/build/bin/fail: common/build/all
 
 _test/common/all/build: _test/build/bin/current _test/build/bin/linux _test/build/bin/linux/all _test/build/bin/mac _test/build/bin/mac/all _test/build/bin/all
 
@@ -345,6 +345,97 @@ _test/dynamic/fail: check/installed/curl
 
 _test/executable: _test/dynamic/ok _test/dynamic/fail
 
-_test/clean: clean/common clean/build _clean/dummy
+_RELEASE_EXEC_PROJECT = release-exec
+_RELEASE_DIR_PROJECT = release-dir
+_RELEASE_DIR_PATH = $(BUILD_PATH)/bundle
+_RELEASE_ARTIFACTS_DIR = $(BUILD_PATH)/.artifacts
 
-_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/trim _test/split _test/clean _test/executable
+_test/release/prepare/artifacts:
+	@$(MAKE) common/build/dir; \
+	mkdir -p "$(_RELEASE_ARTIFACTS_DIR)"; \
+	mkdir -p "$(_RELEASE_ARTIFACTS_DIR)/sub"; \
+	mkdir -p "$(_RELEASE_ARTIFACTS_DIR)/sub/deep"; \
+	echo "readme" > "$(_RELEASE_ARTIFACTS_DIR)/README.md"; \
+	echo "license" > "$(_RELEASE_ARTIFACTS_DIR)/LICENSE"; \
+	echo "ignore" > "$(_RELEASE_ARTIFACTS_DIR)/.ignore"; \
+	echo "first" > "$(_RELEASE_ARTIFACTS_DIR)/sub/first.txt"; \
+	echo "second" > "$(_RELEASE_ARTIFACTS_DIR)/sub/second.txt"; \
+	echo "third" > "$(_RELEASE_ARTIFACTS_DIR)/sub/deep/third.txt"; \
+
+_test/release/prepare/exec:
+	@${INCLUDE_BUILD_OUT_NAME} \
+	$(MAKE) common/build/dir; \
+	amd="$$(build_out_name "$(_RELEASE_EXEC_PROJECT)" "$(OS_LINUX)" "$(ARCH_AMD)")"; \
+	arm="$$(build_out_name "$(_RELEASE_EXEC_PROJECT)" "$(OS_LINUX)" "$(ARCH_ARM)")"; \
+	amd_full="$(BUILD_PATH)/$${amd}"; \
+	arm_full="$(BUILD_PATH)/$${arm}"; \
+	echo "echo amd" > "$$amd_full"; \
+	echo "echo arm" > "$$arm_full"; \
+	chmod 755  "$$amd_full"; \
+	chmod 755  "$$arm_full"
+
+_test/release/prepare/dir:
+	@${INCLUDE_BUILD_OUT_NAME} \
+	$(MAKE) common/build/dir; \
+	amd="$$(build_out_name "$(_RELEASE_DIR_PROJECT)" "$(OS_LINUX)" "$(ARCH_AMD)")"; \
+	arm="$$(build_out_name "$(_RELEASE_DIR_PROJECT)" "$(OS_LINUX)" "$(ARCH_ARM)")"; \
+	amd_full="$(_RELEASE_DIR_PATH)/$${amd}"; \
+	arm_full="$(_RELEASE_DIR_PATH)/$${arm}"; \
+	for ii in "$$amd_full" "$$arm_full"; do \
+		mkdir -p "$$ii"; \
+		mkdir -p "$${ii}/.dot"; \
+		mkdir -p "$${ii}/sb"; \
+		mkdir -p "$${ii}/sb/deep"; \
+		echo "index" > "$${ii}/index.js"; \
+		chmod 755 "$${ii}/index.js"; \
+		echo "ignore" > "$${ii}/.ignore"; \
+		echo "aa" > "$${ii}/.dot/aa.txt"; \
+		echo "another" > "$${ii}/sb/another"; \
+		echo "modules" > "$${ii}/sb/deep/modules"; \
+		echo "track" > "$${ii}/sb/deep/.track"; \
+	done
+
+_test/release/exec: export RELEASE_NAME = v0.0.1
+_test/release/exec: export PROJECT_NAME = $(_RELEASE_EXEC_PROJECT)
+_test/release/exec:
+	@$(MAKE) clean/build; \
+	$(MAKE) clean/release; \
+	$(MAKE) _test/release/prepare/exec; \
+	$(MAKE) common/release; \
+
+_test/release/exec/artifacts: export RELEASE_NAME = v0.0.2
+_test/release/exec/artifacts: export PROJECT_NAME = $(_RELEASE_EXEC_PROJECT)
+_test/release/exec/artifacts: export ADDITIONAL_ARTIFACTS_DIR = $(_RELEASE_ARTIFACTS_DIR)
+_test/release/exec/artifacts:
+	@$(MAKE) clean/build; \
+	$(MAKE) clean/release; \
+	$(MAKE) _test/release/prepare/exec; \
+	$(MAKE) _test/release/prepare/artifacts; \
+	$(MAKE) common/release; \
+
+
+_test/release/dir: export RELEASE_NAME = v0.0.3
+_test/release/dir: export PROJECT_NAME = $(_RELEASE_DIR_PROJECT)
+_test/release/dir: export BINARIES_DIR = $(_RELEASE_DIR_PATH)
+_test/release/dir:
+	@$(MAKE) clean/build; \
+	$(MAKE) clean/release; \
+	$(MAKE) _test/release/prepare/dir; \
+	$(MAKE) common/release; \
+
+_test/release/dir/artifact: export RELEASE_NAME = v0.0.4
+_test/release/dir/artifact: export PROJECT_NAME = $(_RELEASE_DIR_PROJECT)
+_test/release/dir/artifact: export BINARIES_DIR = $(_RELEASE_DIR_PATH)
+_test/release/dir/artifact: export ADDITIONAL_ARTIFACTS_DIR = $(_RELEASE_ARTIFACTS_DIR)
+_test/release/dir/artifact:
+	@$(MAKE) clean/build; \
+	$(MAKE) clean/release; \
+	$(MAKE) _test/release/prepare/dir; \
+	$(MAKE) _test/release/prepare/artifacts; \
+	$(MAKE) common/release; \
+
+_test/release: _test/release/exec _test/release/exec/artifacts _test/release/dir _test/release/dir/artifact
+
+_test/clean: clean/common clean/build clean/release _clean/dummy
+
+_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/trim _test/split _test/release _test/clean _test/executable

@@ -4,23 +4,21 @@ common/git/check/gitignore: ## Check that gitignore file contains another gitign
 	@##~ ROOT_GITIGNORE=PATH - path to gitignore file for check. Default $(CURDIR)/.gitignore
 	@##~ GITIGNORES_WITH_REQUIRED_RULES=PATHS... - comma separated paths to gitignore files that should contains ROOT_GITIGNORE
 	@${INCLUDE_SPLIT} \
+	${INCLUDE_ECHO} \
 	root_gitignore="$$ROOT_GITIGNORE"; \
 	if [ -z "$$root_gitignore" ]; then \
 		root_gitignore="$(CURDIR)/.gitignore"; \
 	fi; \
 	if [ ! -f "$$root_gitignore" ]; then \
-		echo -e "${RED_COLOR}$$root_gitignore not found or not file${NO_COLOR}"; \
-		exit 1; \
+		exit_with_err "$$root_gitignore not found or not file"; \
 	fi; \
 	if [ -z "$$GITIGNORES_WITH_REQUIRED_RULES" ]; then \
-		echo -e "${RED_COLOR}GITIGNORES_WITH_REQUIRED_RULES with comma separated gitignore's to check not passed${NO_COLOR}"; \
-		exit 1; \
+		exit_with_err "GITIGNORES_WITH_REQUIRED_RULES with comma separated gitignore's to check not passed"; \
 	fi; \
-	echo -e "${GREEN_COLOR}Use root .gitignore as $$root_gitignore${NO_COLOR}"; \
+	echo_info "Use root .gitignore as $$root_gitignore"; \
 	split_by_comma "gitignores_list" "$$GITIGNORES_WITH_REQUIRED_RULES" "trim_spaces"; \
 	if [[ "$${#gitignores_list[@]}" == "0" ]]; then \
-		echo -e "${RED_COLOR}GITIGNORES_WITH_REQUIRED_RULES have empty list${NO_COLOR}"; \
-		exit 1; \
+		exit_with_err "GITIGNORES_WITH_REQUIRED_RULES have empty list"; \
 	fi; \
 	function correct_gitignore_line() { \
 		local line="$$1"; \
@@ -67,9 +65,9 @@ common/git/check/gitignore: ## Check that gitignore file contains another gitign
 	if [[ "$${#not_have[@]}" == "0" ]]; then \
 		exit 0; \
 	fi; \
-	echo -e "${RED_COLOR}Root gitignore $$root_gitignore not have:${NO_COLOR}"; \
+	echo_err "Root gitignore $$root_gitignore not have:"; \
 	for err in "$${not_have[@]}"; do \
-		echo -e "${RED_COLOR}  $$err${NO_COLOR}"; \
+		echo_err "  $$err"; \
 	done; \
 	exit 1
 
