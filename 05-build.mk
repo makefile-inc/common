@@ -1,5 +1,5 @@
 ifndef SET_BUILD_PATH
-  SET_BUILD_PATH = $(CURDIR)/build
+  SET_BUILD_PATH = $(CURDIR)/.build
 endif
 
 BUILD_PATH = $(abspath $(SET_BUILD_PATH))
@@ -94,7 +94,7 @@ endef
 ##@ Common. Build
 
 common/build/dir: ## Make build directory
-	@##~ SET_BUILD_PATH=PATH - dir for output build binaries. By default $(CURDIR)/build
+	@##~ SET_BUILD_PATH=PATH - dir for output build binaries. By default $(CURDIR)/.build
 	@mkdir -p "$(BUILD_PATH)"
 
 _build/general: common/build/dir
@@ -175,7 +175,7 @@ common/build/all: ## Do build target for mac and linux for all arch
 	@$(MAKE) common/build/linux/all
 	@$(MAKE) common/build/mac/all
 
-clean/build: ## Delete build/ directory 
+clean/build: ## Delete build directory 
 	@rm -rfv "$(BUILD_PATH)"
 
 .PHONY: common/build/dir _build/general common/build/current common/build/linux common/build/linux/all common/build/mac common/build/mac/all common/build/all clean/build

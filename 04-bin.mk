@@ -323,6 +323,25 @@ fi; \
 exit 0;
 endef
 
+YQ_BIN_NAME  = yq
+YQ_BIN_FULL  = $(BINARIES_PATH)/$(YQ_BIN_NAME)
+
+JQ_BIN_NAME = jq
+JQ_BIN_FULL = $(BINARIES_PATH)/$(JQ_BIN_NAME)
+
+TAR_BIN = tar
+FIND_BIN = find
+
+ifeq ($(OS_CALCULATED), $(OS_LINUX))
+	JQ_PLATFORM = $(OS_LINUX)
+else ifeq ($(OS_CALCULATED), $(OS_MACOS))
+	JQ_PLATFORM = macos
+	TAR_BIN = gtar
+	FIND_BIN = gfind
+endif
+
+JQ_PLATFORM_ARCH = $(JQ_PLATFORM)-$(ARCH_CALCULATED)
+
 ##@ Common. Directories
 
 bin: ## Make bin directory
@@ -331,17 +350,36 @@ bin: ## Make bin directory
 
 ##@ Common. Checks binary is installed in system
 
-check/installed/curl: ## curl
-	@if ! command -v curl > /dev/null; then \
-        echo "${RED_COLOR}curl not installed${NO_COLOR}"; \
+check/installed/bin: ## Check binary is installed. use $(MAKE) check/installed/bin for call!
+	@##~ BIN_NAME=NAME - name of binary for check
+	@if [ -z "$$BIN_NAME" ]; then \
+		echo "${RED_COLOR}BIN_NAME not passed${NO_COLOR}"; \
+        exit 1; \
+	fi; \
+	if ! command -v "$$BIN_NAME" > /dev/null; then \
+        echo "${RED_COLOR}$$BIN_NAME not installed${NO_COLOR}"; \
         exit 1; \
     fi
 
+check/installed/curl: export BIN_NAME = curl
+check/installed/curl: ## curl
+	@$(MAKE) check/installed/bin
+
+check/installed/docker: export BIN_NAME = docker
 check/installed/docker: ## docker
-	@if ! command -v docker > /dev/null; then \
-        echo "${RED_COLOR}docker not installed${NO_COLOR}"; \
-        exit 1; \
-    fi
+	@$(MAKE) check/installed/bin
+
+check/installed/tar: export BIN_NAME = $(TAR_BIN)
+check/installed/tar: ## GNU tar
+	@$(MAKE) check/installed/bin
+
+check/installed/find: export BIN_NAME = $(FIND_BIN)
+check/installed/find: ## GNU find
+	@$(MAKE) check/installed/bin
+
+check/installed/sha256sum: export BIN_NAME = sha256sum
+check/installed/sha256sum: ## sha256sum
+	@$(MAKE) check/installed/bin
 
 ##@ Common. Check executables
 
@@ -392,20 +430,6 @@ install/binary: bin check/installed/curl ## install (download) binary with provi
 		exit 1; \
 	fi
 
-YQ_BIN_NAME  = yq
-YQ_BIN_FULL  = $(BINARIES_PATH)/$(YQ_BIN_NAME)
-
-JQ_BIN_NAME = jq
-JQ_BIN_FULL = $(BINARIES_PATH)/$(JQ_BIN_NAME)
-
-ifeq ($(OS_CALCULATED), $(OS_LINUX))
-	JQ_PLATFORM = $(OS_LINUX)
-else ifeq ($(OS_CALCULATED), $(OS_MACOS))
-	JQ_PLATFORM = macos
-endif
-
-JQ_PLATFORM_ARCH = $(JQ_PLATFORM)-$(ARCH_CALCULATED)
-
 install/jq: export INSTALL_BIN_NAME = $(JQ_BIN_NAME)
 install/jq: export INSTALL_BIN_VERSION = $(JQ_VERSION)
 install/jq: export INSTALL_BIN_URL = https://github.com/jqlang/jq/releases/download/jq-@BIN_VER@/jq-$(JQ_PLATFORM_ARCH)
@@ -426,4 +450,4 @@ clean/common: ## Remove common binaries from local bin dir
 	@rm -fv "$(JQ_BIN_FULL)"
 	@rm -fv "$(YQ_BIN_FULL)"
 
-.PHONY: check/installed/curl check/installed/docker install/binary install/jq install/yq install/common/all clean/common check/bin/linked/dynamic check/bin/linked/static
+.PHONY: check/installed/bin check/installed/tar check/installed/find check/installed/sha256sum check/installed/curl check/installed/docker install/binary install/jq install/yq install/common/all clean/common check/bin/linked/dynamic check/bin/linked/static

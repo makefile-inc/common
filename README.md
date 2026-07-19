@@ -10,6 +10,8 @@ Should be installed:
 - `awk`. For MacOS should installed `gawk`
 - `curl` - it needs for download dependencies. By default, targets that needs curl
    check that its installed
+- `find`. For MacOS should installed `gfind`
+- `tar`. For MacOS should installed `gtar`
 - now we support only `Linux` and `MacOS` on `x86` and `ARM` 64-bits.
 
 ### Bash caveats
@@ -40,6 +42,8 @@ Another deps can be installed with:
 ```bash
 brew install curl
 brew install gawk
+brew install findutils
+brew install gnu-tar
 ```
 
 ## Install
@@ -66,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.9.0 && git pull
+git fetch -a && git checkout v0.10.0 && git pull
 popd
 ```
 
@@ -144,9 +148,12 @@ Now includes files in `common` repo contains next predefined variables:
 - `ARCH_CALCULATED` - result of command `uname -m` architecture (like `amd64`, `arm64`)
 - `OS_CALCULATED` - OS name `linux` or `darwin` for MacOS
 - `AWK_BIN` - awk binary name. For linux `awk`, for MacOS `gawk`
+- `FIND_BIN` - `find` binary name. For linux `find`, for MacOS `gfind`
+- `TAR_BIN` - tar binary name. For linux `tar`, for MacOS `gtar`
 - `JQ_BIN_FULL` - full path to local installed [jq](https://github.com/jqlang/jq)
 - `YQ_BIN_FULL` - full path to local installed [yq](https://github.com/mikefarah/yq)
-- `BUILD_PATH` - directory to output builds (by default `./build`). Can be redeclared with `SET_BUILD_PATH`
+- `BUILD_PATH` - directory to output builds (by default `$(CURDIR)/.build`). Can be redeclared with `SET_BUILD_PATH`
+- `RELEASE_PATH` - directory to output release artifacts (by default `$(CURDIR)/.release`). Can be redeclared with `SET_RELEASE_PATH`
 
 ### Definitions
 
@@ -582,6 +589,21 @@ Next definitions can be included multiple times because sh redeclare function wi
     install/yq: ## yq https://github.com/mikefarah/yq
     	@$(MAKE) install/binary # USE MAKE FOR PREVENT SKIP TARGET!
     ```
+- `check/installed/bin` - check that binary installed in system.
+   **WARNING! Call this target with recursive call make to prevent skip run target in another targets multiple times!**
+
+   Params:
+   - `BIN_NAME`=*NAME* - name of binary for check
+
+   Example:
+   ```Makefile
+   check/installed/curl: export BIN_NAME = curl
+   check/installed/curl:
+	 	@$(MAKE) check/installed/bin # USE MAKE FOR PREVENT SKIP TARGET!
+   ```
+- `check/installed/tar` - check that GNU `tar` (for MacOS `gtar`) is installed in the system
+- `check/installed/find` - check that GNU `find` (for MacOS `gfind`) is installed in the system
+- `check/installed/sha256sum` - check that `sha256sum` is installed in the system
 - `check/installed/curl` - check that [curl](https://curl.se/) is installed in the system
 - `check/installed/docker` - check that [docker](https://www.docker.com/) is installed in the system
 - `install/jq` - install [jq](https://github.com/jqlang/jq) to local bin path
@@ -616,7 +638,7 @@ Every target take next params:
 - `BUILD_TARGET` - make target for run.
 
 Targets pass to `BUILD_TARGET` next params:
-- `OUT_BIN`    - output binary file path in `./build` (can be redeclared with `SET_BUILD_PATH`). 
+- `OUT_BIN`    - output binary file path in `./.build` (can be redeclared with `SET_BUILD_PATH`). 
                  File has next format `$(BUILD_PATH)/$(PROJECT_NAME)-OS-ARCH`
 - `BUILD_OS`   - os for build (linux or darwin)
 - `BUILD_ARCH` - build arch (amd64 or arm64).
@@ -630,6 +652,112 @@ Targets:
 - `common/build/mac/all`   - build binary for MacOS and all supported arch'es
 - `common/build/all`       - build binary for all supported os'es and arch'es
 - `clean/build`            - remove `BUILD_PATH` dir.
+
+### Release artifacts
+
+Next target prepare release artifact with calculate sha256 sum.
+
+All next targets uses `RELEASE_PATH` root dir to output artifacts.
+By default `$(CURDIR)/.release`, can be redeclared with `SET_RELEASE_PATH` parameter.
+
+Targets:
+- `common/release/dir` - create root dir for output artifacts
+
+  Params:
+  - `RELEASE_NAME` - name of release (for example, tag). Required.
+     Should **not** contains `/` symbol, because this name uses as sub-dir in `RELEASE_PATH`.
+
+- `clean/release` - Delete release directory `RELEASE_PATH`
+
+- `common/release` - prepare release artifacts for upload. See description after describe parameters.
+  **WARNING!** Target will not cleanup any files if fail! 
+
+  Params:
+  - `PROJECT_NAME`=*NAME* - name of project. Required
+  - `RELEASE_NAME`=*NAME* - name of release (for example, tag). Required
+     Should not contains `/` symbol, because this name uses as sub-dir in `RELEASE_PATH`.
+  - `BINARIES_DIR`=*PATH* - dir with target files or directories. 
+	  Optional. By default uses `BUILD_PATH`
+  - `ADDITIONAL_ARTIFACTS_DIR`=*PATH* -  if passed all files in this dir
+	  will add to release archive for all targets. 
+	  Helpful to add install script, systemd service, readme/license files
+	  Optional.
+	  If passed, but dir not found or not contains any files - fail with error.
+
+  `common/release` target do next operations:
+	- create `$(RELEASE_PATH)/$(RELEASE_NAME)` directory.
+	
+  - find all executable files with `PROJECT_NAME` prefix in `BINARIES_DIR`. 
+	  If found one or more executable files:
+	  - if `ADDITIONAL_ARTIFACTS_DIR` not empty, for each executable:
+        - creates temp directory in `$(RELEASE_PATH)/$(RELEASE_NAME)` with name of executable
+        - copy executable (with name `PROJECT_NAME`, **without suffix!**).
+        - copy all files from `ADDITIONAL_ARTIFACTS_DIR`
+        - chmod to `755` executable
+        - creates `{executable name}.tar.gz` archive from temp dir
+        - calculate sha256sum from archive and write hash to `{executable name}.tar.gz.sha256sum` file.
+        - remove temp dir.
+	  - if `ADDITIONAL_ARTIFACTS_DIR` empty:
+	    - copy each executable as is (with `PROJECT_NAME` and suffix) to `$(RELEASE_PATH)/$(RELEASE_NAME)`
+	    - chmod to `755` executable
+	    - calculate sha256sum from executable and write hash to `{executable name}.sha256sum` file.
+	  - End of script.
+	- If executables not found, find directories with `PROJECT_NAME` prefix in `BINARIES_DIR`.
+    This case helpful if you release consists of multiple files, like python project.
+	  - If found, for each directory: 
+	    - creates temp directory in `$(RELEASE_PATH)/$(RELEASE_NAME)` with name of dir (with `PROJECT_NAME` and suffix)
+	    - copy all from directory to temp dir
+	    - copy all from `ADDITIONAL_ARTIFACTS_DIR` if it is not empty
+	    - creates `{dir name}.tar.gz` archive from temp dir
+	    - calculate sha256sum from archive and write hash to `{dir name}.tar.gz.sha256sum` file
+	    - remove temp dir.
+	 
+	- If not found any executable files or directories - fail with error.
+
+  After all you can upload `$(RELEASE_PATH)/$(RELEASE_NAME)` to artifacts of release in `Github` or `Gitlab`.
+  
+  Output examples: 
+  - only binary release without artifacts. 
+    
+    If you pass:
+    - `PROJECT_NAME=app`
+    - `RELEASE_NAME=v1.0.0`
+
+    And you `.build/` directory contains next binaries:
+    - `app-linux-amd64`
+    - `app-linux-arm64`
+    
+    You will get next files in `.release/v1.0.0`:
+    - `app-linux-amd64`
+    - `app-linux-amd64.sha256sum`
+    - `app-linux-arm64`
+    - `app-linux-arm64.sha256sum`
+    
+  - only binary release with artifacts. 
+    
+    If you pass:
+    - `PROJECT_NAME=app`
+    - `RELEASE_NAME=v1.0.0`
+    - `ADDITIONAL_ARTIFACTS_DIR=.build/.artifacts`
+
+    You `.build/` directory contains next binaries:
+    - `app-linux-amd64`
+    - `app-linux-arm64`
+
+    And you `.build/.artifacts` directory contains next files:
+    - `README.md`
+    - `LICENSE`
+    
+    You will get next files in `.release/v1.0.0`:
+    - `app-linux-amd64.tar.gz`
+    - `app-linux-amd64.tar.gz.sha256sum`
+    - `app-linux-arm64.tar.gz`
+    - `app-linux-arm64.tar.gz.sha256sum`
+
+    `app-linux-amd64.tar.gz` will contains:
+    - `/app`
+    - `/README.md`
+    - `/LICENSE`
 
 ### Git
 
