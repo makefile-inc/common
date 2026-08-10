@@ -436,6 +436,56 @@ _test/release/dir/artifact:
 
 _test/release: _test/release/exec _test/release/exec/artifacts _test/release/dir _test/release/dir/artifact
 
+_test/append-str-with:
+	@${INCLUDE_STRINGS} \
+	empty=""; \
+	empty="$$(append_str_with_separator "|" "$$empty" "first")"; \
+	echo "Empty after add first: '$$empty'"; \
+	empty="$$(append_str_with_separator "|" "$$empty" "second")"; \
+	echo "Empty after add second: '$$empty'"; \
+	empty="$$(append_str_with_separator "|" "$$empty" "third")"; \
+	echo "Empty after add third: '$$empty'"; \
+	not_empty="not empty"; \
+	not_empty="$$(append_str_with_separator " | " "$$not_empty" "first")"; \
+	echo "Not empty after add first: '$$not_empty'"; \
+	not_empty="$$(append_str_with_separator " | " "$$not_empty" "second")"; \
+	echo "Not empty after add second: '$$not_empty'"; \
+	not_empty="$$(append_str_with_separator " | " "$$not_empty" "third")"; \
+	echo "Not empty after add third: '$$not_empty'"; \
+	empty_with_empty_add=""; \
+	empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "")"; \
+	echo "Empty with empty add - add empty string: '$$empty_with_empty_add'"; \
+	empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "first")"; \
+	echo "Empty with empty add - after add first: '$$empty_with_empty_add'"; \
+	empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "")"; \
+	echo "Empty with empty add - second empty: '$$empty_with_empty_add'"; \
+	empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "second")"; \
+	echo "Empty with empty add - add second: '$$empty_with_empty_add'"; \
+	append_new_line=""; \
+	append_new_line="$$(append_str_with_new_line "$$append_new_line" "")"; \
+	echo "Append with new line - add empty: '$$append_new_line'"; \
+	append_new_line="$$(append_str_with_new_line "$$append_new_line" "first str")"; \
+	echo "Append with new line - add first str: '$$append_new_line'"; \
+	append_new_line="$$(append_str_with_new_line "$$append_new_line" "second str")"; \
+	echo "Append with new line - add second str: '$$append_new_line'"
+
+_test/shift-str-on:
+	@${INCLUDE_STRINGS} \
+	new_line=$$'\n'; \
+	one_string="one string"; \
+	one_string="$$(shift_str_on "$$one_string" "5" " ")"; \
+	echo "One string: '$$one_string'"; \
+	two_strings="first string$${new_line}second string"; \
+	two_strings="$$(shift_str_on "$$two_strings" "1" " - ")"; \
+	echo "Two strings: '$$two_strings'"; \
+	three_strings="first string$${new_line}second string$${new_line}third string"; \
+	three_strings="$$(shift_str_on "$$three_strings" "1" "** ")"; \
+	echo "three strings:"; \
+	echo "$$three_strings"; \
+	three_strings="$$(shift_str_on_tab "$$three_strings" "2")"; \
+	echo "three strings after shift on 2 tabs:"; \
+	echo "$$three_strings"
+
 define FULL_COMMENT
 # Copyright \d{4}
 # license that can be found in the LICENSE file.
@@ -455,4 +505,4 @@ _test/license: _test/license/current _test/license/current/full
 
 _test/clean: clean/common clean/build clean/release _clean/dummy
 
-_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/trim _test/split _test/release _test/clean _test/executable _test/license
+_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/trim _test/split _test/release _test/clean _test/executable _test/license _test/append-str-with _test/shift-str-on

@@ -125,7 +125,7 @@ MAKEFLAGS += --no-print-directory
 ### Variables
 
 Now includes files in `common` repo contains next predefined variables:
-- `BINARIES_PATH` - dir to store local helper binaries. By default `$(CURDIR)/bin`.
+- `BINARIES_PATH` - dir to store local helper binaries. By default `$(CURDIR)/.bin`.
   Can be redeclared with `SET_BINARIES_PATH` variable.
   Also, includes add this path to `PATH` env when running make. 
 - Color variables, using for color output in terminal:
@@ -400,6 +400,92 @@ Next definitions can be included multiple times because sh redeclare function wi
   	split_by "||" "transform_own_arr" "$$transform_own" "own_transform_fun"; \
   	echo "Transform own:"; \
   	print_arr "$${transform_own_arr[@]}"
+  ```
+- `INCLUDE_STRINGS` - add next sh functions:
+    - `append_str_with_separator` - append string to end with separator prefix and return.
+      If append only one string, prefix will not add.
+
+      End of string always does not contains separator.
+
+      If append string is empty, return passed string.
+
+      If string for add is empty append string without separator.
+
+      Arguments:
+      - `$1` - separator, can be empty
+      - `$2` - string for add
+      - `$3` - append string
+    - `append_str_with_new_line - call `append_str_with_separator` with new line separator.
+
+      Arguments:
+      - `$1` - string for add
+      - `$2` - append string
+    - `shift_str_on` - split string by new line and add prefix (shift) for each line.
+
+      Arguments:
+      - `$1` - string to append prefix (shift)
+      - `$2` - count of prefixes to add. if not passed or empty will 1
+      - `$3` - prefix to add. if not passed or empty will use one space prefix
+    - `shift_str_on_tab` - call shift_str_on with tab prefix.
+
+      Arguments:
+      - `$1` - string to append prefix (shift)
+      - `$2` - count of prefixes to add. if not passed or empty will 1
+
+  Example:
+  ```Makefile
+  include *.mk
+
+  _test/append-str-with:
+		@${INCLUDE_STRINGS} \
+		empty=""; \
+		empty="$$(append_str_with_separator "|" "$$empty" "first")"; \
+		echo "Empty after add first: '$$empty'"; \
+		empty="$$(append_str_with_separator "|" "$$empty" "second")"; \
+		echo "Empty after add second: '$$empty'"; \
+		empty="$$(append_str_with_separator "|" "$$empty" "third")"; \
+		echo "Empty after add third: '$$empty'"; \
+		not_empty="not empty"; \
+		not_empty="$$(append_str_with_separator " | " "$$not_empty" "first")"; \
+		echo "Not empty after add first: '$$not_empty'"; \
+		not_empty="$$(append_str_with_separator " | " "$$not_empty" "second")"; \
+		echo "Not empty after add second: '$$not_empty'"; \
+		not_empty="$$(append_str_with_separator " | " "$$not_empty" "third")"; \
+		echo "Not empty after add third: '$$not_empty'"; \
+		empty_with_empty_add=""; \
+		empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "")"; \
+		echo "Empty with empty add - add empty string: '$$empty_with_empty_add'"; \
+		empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "first")"; \
+		echo "Empty with empty add - after add first: '$$empty_with_empty_add'"; \
+		empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "")"; \
+		echo "Empty with empty add - second empty: '$$empty_with_empty_add'"; \
+		empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "second")"; \
+		echo "Empty with empty add - add second: '$$empty_with_empty_add'"; \
+		append_new_line=""; \
+		append_new_line="$$(append_str_with_new_line "$$append_new_line" "")"; \
+		echo "Append with new line - add empty: '$$append_new_line'"; \
+		append_new_line="$$(append_str_with_new_line "$$append_new_line" "first str")"; \
+		echo "Append with new line - add first str: '$$append_new_line'"; \
+		append_new_line="$$(append_str_with_new_line "$$append_new_line" "second str")"; \
+		echo "Append with new line - add second str: '$$append_new_line'"
+
+  _test/shift-str-on:
+		@${INCLUDE_STRINGS} \
+		new_line=$$'\n'; \
+		one_string="one string"; \
+		one_string="$$(shift_str_on "$$one_string" "5" " ")"; \
+		echo "One string: '$$one_string'"; \
+		two_strings="first string$${new_line}second string"; \
+		two_strings="$$(shift_str_on "$$two_strings" "1" " - ")"; \
+		echo "Two strings: '$$two_strings'"; \
+		three_strings="first string$${new_line}second string$${new_line}third string"; \
+		three_strings="$$(shift_str_on "$$three_strings" "1" "** ")"; \
+		echo "three strings:"; \
+		echo "$$three_strings"; \
+		three_strings="$$(shift_str_on_tab "$$three_strings" "2")"; \
+		echo "three strings after shift on 2 tabs:"; \
+		echo "$$three_strings"
+
   ```
 - `INCLUDE_CHECK_BINARY` - add next sh function (`INCLUDE_ECHO` also included):
     - `check_binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version.
