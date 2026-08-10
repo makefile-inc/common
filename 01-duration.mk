@@ -1,3 +1,6 @@
+# Copyright 2026
+# license that can be found in the LICENSE file.
+
 # NOW_MICROSECONDS - output curreint unix-time with microseconds 
 # DO NOT in $(call ...)
 # Example:

@@ -436,6 +436,23 @@ _test/release/dir/artifact:
 
 _test/release: _test/release/exec _test/release/exec/artifacts _test/release/dir _test/release/dir/artifact
 
+define FULL_COMMENT
+# Copyright \d{4}
+# license that can be found in the LICENSE file.
+endef
+
+_test/license/current: export EXTENSION_TO_CHECK = mk
+_test/license/current: export COMMENT_PREFIX = \#
+_test/license/current: 
+	@$(MAKE) common/license/check
+
+_test/license/current/full: export EXTENSION_TO_CHECK = mk
+_test/license/current/full: export FULL_COMMENT_STR = ${FULL_COMMENT}
+_test/license/current/full:
+	@$(MAKE) common/license/check
+
+_test/license: _test/license/current _test/license/current/full
+
 _test/clean: clean/common clean/build clean/release _clean/dummy
 
-_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/trim _test/split _test/release _test/clean _test/executable
+_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/trim _test/split _test/release _test/clean _test/executable _test/license

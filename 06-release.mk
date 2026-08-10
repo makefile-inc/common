@@ -1,3 +1,6 @@
+# Copyright 2026
+# license that can be found in the LICENSE file.
+
 ifndef SET_RELEASE_PATH
   SET_RELEASE_PATH = $(CURDIR)/.release
 endif
