@@ -35,7 +35,7 @@
 #       $3  - function to call
 #       ... - another arguments will passed to function started from second arg, first argument is file path  
 # Example include:
-#   @${INCLUDE_STRINGS} \ - slash is required!
+#   @${INCLUDE_FS_CONSUME} \ - slash is required!
 # Example:
 #   include *.mk
 #   _test/glob:

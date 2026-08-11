@@ -154,6 +154,7 @@ Now includes files in `common` repo contains next predefined variables:
 - `YQ_BIN_FULL` - full path to local installed [yq](https://github.com/mikefarah/yq)
 - `BUILD_PATH` - directory to output builds (by default `$(CURDIR)/.build`). Can be redeclared with `SET_BUILD_PATH`
 - `RELEASE_PATH` - directory to output release artifacts (by default `$(CURDIR)/.release`). Can be redeclared with `SET_RELEASE_PATH`
+- `GET_GIT_FILES_SEPARATOR` - separator for returned string with list files path in `get_git_changed_files` util (see `INCLUDE_GIT_OPS` below).  
 
 ### Definitions
 
@@ -609,6 +610,55 @@ Next definitions can be included multiple times because sh redeclare function wi
 			echo ""; \
 			echo_info "do_in_dir failed!"; \
 		fi
+
+  ```
+- `INCLUDE_GIT_OPS` - add next sh function (`INCLUDE_ECHO` and `INCLUDE_STRINGS` also included):
+  - `is_git_repo_has_not_changes` - returns `1` if git repo **has** diff (uncommit changes).
+
+    Returns `255` code if has internal error. 
+  - `get_git_changed_files` - returns `1` and echo list of files have changes in one string separated by `$(GET_GIT_FILES_SEPARATOR)`.
+
+     Returns `255` code if has internal error.
+
+     Returns `zero` code if git repo has not changes.
+
+     Arguments:
+    - `$1` - if passed `true` also new files will returned
+    - `$2` - comma-separated grep patterns files to check diff. Optional 
+      otherwise check all files.
+    - `$3` - comma-separated grep patterns files to skip check diff. Optional 
+       otherwise check all files.
+  Example:
+  ```Makefile
+  include *.mk
+
+  repo-has-diff:
+		@${INCLUDE_GIT_OPS} \
+		if ! is_git_repo_has_not_changes; then \
+			exit 1; \
+		fi;
+   echo-has-diff:
+		@${INCLUDE_GIT_OPS} \
+		diffed_files_str=""; \
+		if diffed_files_str="$$(get_git_changed_files "$$with_new_files" "$$files_check" "$$files_skip")"; then \
+			exit 0; \
+		else \
+			ret_code="$$?"; \
+			if [[ "$$ret_code" == "255" ]]; then \
+				exit_with_err "Has internal error ^^^"; \
+			fi; \
+		fi; \
+		diffed_files=(); \
+		split_by "$(GET_GIT_FILES_SEPARATOR)" "diffed_files" "$$diffed_files_str"; \
+		msg="$${HAS_DIFF_MSG:-}"; \
+		if [ -n "$$msg" ]; then \
+			exit_with_err "$$msg"; \
+		fi; \
+		echo_err "Files changed:"; \
+		for chn_f in "$${diffed_files[@]}"; do \
+			echo_err "  $$chn_f"; \
+		done; \
+		exit 1
   ```
 - `INCLUDE_CHECK_BINARY` - add next sh function (`INCLUDE_ECHO` also included):
     - `check_binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version.
@@ -969,6 +1019,7 @@ Targets:
     - `/LICENSE`
 
 ### Git
+- `common/git/check/no-changes` - check that git repo has not changes across all repo.
 
 - `common/git/check/gitignore` - check that gitignore file contains another gitignore files rules.
    Usefully for checking in another includes repos and root makefile that all gitignore rules
@@ -978,14 +1029,17 @@ Targets:
    - `ROOT_GITIGNORE`=*PATH* - path to gitignore file for check (root .gitignore). Default `$(CURDIR)/.gitignore`
    - `GITIGNORES_WITH_REQUIRED_RULES`=*PATHS...* - comma separated paths to gitignore files that should contains `ROOT_GITIGNORE`.
 
-- `common/git/check/has-diff` - check that repo has difference
+- `common/git/check/has-diff` - 
   
   Params:
-  - `TARGET_NAME`=*NAME* - if passed run make target before git check. Optional
-  - `HAS_DIFF_MSG`=*MSG* - if has diff this message will be printed. Optional. If not passed print files.
+  - `TARGET_NAME`=*NAME* - if passed run make target before git diff check. Optional
+  - `HAS_DIFF_MSG`=*MSG* - if has diff this message will be printed. Optional. If not passed print files only.
   - `FILES_TO_CHECK`=*REGEXPS...* - comma separated paths regexp for check. Optional
   - `FILES_TO_SKIP`=*REGEXPS...*  - comma separated paths regexp for skip. Optional. Has higher priority.
-  
+  - `SKIP_NEW_FILES`=*true* - if `FILES_TO_CHECK` and `FILES_TO_SKIP` not passed
+    target will out new files to diff. If passed new files will not.
+    If passed, new files will not include to diff.
+
   Examples:
   ```bash
   make common/git/check/has-diff FILES_TO_SKIP=".*.mk" FILES_TO_CHECK=".*.mk" TARGET_NAME="build/dir"
