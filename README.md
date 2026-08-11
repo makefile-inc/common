@@ -401,7 +401,7 @@ Next definitions can be included multiple times because sh redeclare function wi
   	echo "Transform own:"; \
   	print_arr "$${transform_own_arr[@]}"
   ```
-- `INCLUDE_STRINGS` - add next sh functions:
+- `INCLUDE_STRINGS` - add next sh functions (`INCLUDE_SPLIT` also included):
     - `append_str_with_separator` - append string to end with separator prefix and return.
       If append only one string, prefix will not add.
 
@@ -486,6 +486,129 @@ Next definitions can be included multiple times because sh redeclare function wi
 		echo "three strings after shift on 2 tabs:"; \
 		echo "$$three_strings"
 
+  ```
+- `INCLUDE_FS_CONSUME` - add next sh functions (`INCLUDE_ECHO` and `INCLUDE_STRINGS` also included):
+  - `toggle_globs` - enable/disable next globs params `dotglob` `nullglob` `globstar`.
+
+     Returns `255` code if error.
+
+     Arguments:
+     - `$1` - if `on` - enable globs, otherwise - disable
+  - `is_glob` - check passed string is glob string.
+
+     Returns `non-zero` if not glob.
+
+     Arguments:
+     - `$1` - string to check
+  - `do_in_dir` - cd to dir and do function, after call returns to current dir.
+
+     Function output will output as result of function.
+
+     Returns `255` code if has internal error
+
+     Otherwise, returns return code from function.
+
+     Arguments:
+     - `$1`  - dir to cd
+     - `$2`  - function to call
+     - `...` - another arguments will passed to function started from **second** arg, first argument is dir path.
+  - `foreach_dir_by_glob` - call function for each file found by glob.
+
+     Returns `255` exit code if has internal error.
+
+     **Warning!** If you need to find all files in dir and sub dirs,
+     pass glob with prefix `./**/`
+     
+     Passed function can return next return codes:
+       - `255` - will continue foreach, but `foreach_dir_by_glob` returns `1` return code.
+          Useful if need fail, but check all files. 
+       - `254` - will continue foreach, but `foreach_dir_by_glob` returns `zero` return code.
+          Useful if need skip some files. 
+       - `[1-253]` - immediately return from function with returned error code.
+
+     **Warning!** globs is enabled due to call function.
+ 
+     Arguments:
+     - `$1`  - if passes non empty string, will cd to directory and returns to current dir after call
+     - `$2`  - glob to find files
+     - `$3`  - function to call
+     - `...` - another arguments will passed to function started from **second** arg, first argument is file path. 
+  Example:
+  ```Makefile
+  include *.mk
+
+  _test/glob:
+		@${INCLUDE_FS_CONSUME} \
+		if is_glob "*.c?p"; then \
+			echo "Is glob!"; \
+		fi; \
+		if ! is_glob "./app"; then \
+			echo "Is not glob!"; \
+		fi
+
+  _test/fs-utils: _test/glob
+		$(MAKE) install/jq
+		@${INCLUDE_FS_CONSUME} \
+		function echo_file_with_prefix() { \
+			if [[ "$${1}" != "00-common.mk" ]]; then \
+				echo "[$${2}] Find file $${1}"; \
+				return 0; \
+			fi; \
+			return 254; \
+		}; \
+		function echo_file_with_prefix_fail() { \
+			if [[ "$${1}" != "00-common.mk" ]]; then \
+				echo "[$${2}] Find fail file $${1}"; \
+				return 0; \
+			fi; \
+			return 255; \
+		}; \
+		function echo_file_with_prefix_fail_fast() { \
+			if [[ "$${1}" != "03-versions.mk" ]]; then \
+				echo "[$${2}] Find file $${1}"; \
+				return 0; \
+			fi; \
+			echo_err "found fail fast file!"; \
+			return 1; \
+		}; \
+		if foreach_dir_by_glob "" "*.mk" echo_file_with_prefix "ok"; then \
+			echo ""; \
+			echo_info "foreach_dir_by_glob ok!"; \
+		fi; \
+		echo ""; \
+		if ! foreach_dir_by_glob "" "*.mk" echo_file_with_prefix_fail "fail"; then \
+			echo ""; \
+			echo_info "foreach_dir_by_glob failed!"; \
+		fi; \
+		echo ""; \
+		if ! foreach_dir_by_glob "" "*.mk" echo_file_with_prefix_fail_fast; then \
+			echo ""; \
+			echo_info "foreach_dir_by_glob failed fast!"; \
+		fi; \
+		echo ""; \
+		function ls_dir_ok() { \
+			echo "ls dir $${1}:"; \
+			if ! ls -lh "$${1}"; then \
+				echo_warn "ls failed but skipped"; \
+			fi; \
+			return 0; \
+		}; \
+		function ls_dir_fail_with_prefix() { \
+			echo "[$${2}] ls dir fail $${1}:"; \
+			if ! ls -lh "$${1}"; then \
+				echo_warn "ls failed but skipped"; \
+			fi; \
+			echo "error return"; \
+			return 1; \
+		}; \
+		if do_in_dir "$(BINARIES_PATH)" ls_dir_ok; then \
+			echo ""; \
+			echo_info "do_in_dir ok!"; \
+		fi; \
+		if ! do_in_dir "$(BINARIES_PATH)" ls_dir_fail_with_prefix "fail prefix"; then \
+			echo ""; \
+			echo_info "do_in_dir failed!"; \
+		fi
   ```
 - `INCLUDE_CHECK_BINARY` - add next sh function (`INCLUDE_ECHO` also included):
     - `check_binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version.
