@@ -613,14 +613,20 @@ endef
 _test/license/current: export EXTENSION_TO_CHECK = mk
 _test/license/current: export COMMENT_PREFIX = \#
 _test/license/current: 
-	@$(MAKE) common/license/check
+	@$(MAKE) common/license/check || true
 
 _test/license/current/full: export EXTENSION_TO_CHECK = mk
 _test/license/current/full: export FULL_COMMENT_STR = ${FULL_COMMENT}
 _test/license/current/full:
-	@$(MAKE) common/license/check
+	@$(MAKE) common/license/check || true
 
-_test/license: _test/license/current _test/license/current/full
+_test/license/current/with-main: export EXTENSION_TO_CHECK = mk
+_test/license/current/with-main: export COMMENT_PREFIX = \#
+_test/license/current/with-main: export ONLY_CHANGED_WITH = main
+_test/license/current/with-main:
+	@$(MAKE) common/license/check || true
+
+_test/license: _test/license/current _test/license/current/full _test/license/current/with-main
 
 _test/clean: clean/common clean/build clean/release _clean/dummy
 

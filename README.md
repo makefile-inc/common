@@ -1034,6 +1034,108 @@ Targets:
     - `/README.md`
     - `/LICENSE`
 
+### License header check
+
+#### Description
+
+If you need to check that source files contains license header comment
+you can use `common/license/check` target.
+
+By default, target grep all files for next strings:
+
+```
+${COMMENT_PREFIX} Copyright \d{4}
+${COMMENT_PREFIX} license that can be found in the LICENSE file.
+```
+
+like (for bash):
+```bash
+# Copyright 2026
+# license that can be found in the LICENSE file.
+```
+
+If you need to check your own license header you can pass `FULL_COMMENT_STR`
+with license header regexp **(all regexp special symbols should be escaped!)**, like (for c++):
+
+```cpp
+/\*\*
+\s+My company name
+\s+All rights reserved
+\*\*/
+```
+
+Target split this line and create multiline regexp.
+
+By default, targets check all files in current branch.
+If you need to check only changed files between branches (default and current),
+pass `ONLY_CHANGED_WITH` param with 'default' branch (git ref).
+
+**Warning! If your project contains multiple sub-projects with different license
+or you need to check separate files types (extensions), you need to call target
+multiple times. For this you should use recursive `make` call for prevent
+cache target run, like:**
+
+```Makefile
+include *.mk
+
+check-license/go: export EXTENSION_TO_CHECK = go
+check-license/go: export COMMENT_PREFIX = //
+check-license/go:
+  @$(MAKE) common/license/check
+
+check-license/bash: export EXTENSION_TO_CHECK = sh
+check-license/bash: export COMMENT_PREFIX = \#
+check-license/bash:
+  @$(MAKE) common/license/check
+
+check-license: check-license/go check-license/bash
+```
+
+#### Targets
+
+- `common/license/check` - check that all files with extension have license head.
+  
+  Params:
+  - `EXTENSION_TO_CHECK`=*EXT* - extension for find files for check. Required.
+	  Should not contains leading `*` and dot `.`.
+	  For example: `go`
+  - `ONLY_IN_SUB_DIR`=*PATH*   - If passed will find files in passed sub-path 
+	  as `$(CURDIR)/ONLY_IN_SUB_DIR`, By default, find in `$(CURDIR)`
+  - `COMMENT_PREFIX`=*PREFIX*  - If passed check next strings with this prefix:
+    ```
+    Copyright YEAR
+    license that can be found in the LICENSE file.
+    ```
+	  If not passed, should pass `FULL_COMMENT_STR`
+  - `FULL_COMMENT_STR`=*REGEX*   - If passed check split string by new line
+	  and add each line to grep multiline pattern
+	  Each line can be regexp with escape special symbols.
+	  If not passed should pass COMMENT_PREFIX
+  - `SKIP_FILES`=*PATHS*       - comma separated paths without ext for skip checking. Optional
+  - `ONLY_CHANGED_WITH`=*REF*  - git ref to check diff. If passed get diff from current and passed ref
+	  and check files that changed between current and passed ref.
+	  Optional.
+
+  Examples:
+  - full comment regexp with only changed files between default (`main`) branch 
+    ```Makefile
+    define FULL_COMMENT
+    /\*\*
+    \s+My company name
+    \s+All rights reserved
+    \*\*/
+    endef
+    check-license/h: export EXTENSION_TO_CHECK = h
+    check-license/h: export FULL_COMMENT_STR = ${FULL_COMMENT}
+    check-license/h:
+	    @$(MAKE) common/license/check
+    check-license/cpp: export EXTENSION_TO_CHECK = cpp
+    check-license/cpp: export FULL_COMMENT_STR = ${FULL_COMMENT}
+    check-license/cpp:
+	    @$(MAKE) common/license/check
+    check-license: check-license/h check-license/cpp
+    ```
+
 ### Git
 - `common/git/check/no-changes` - check that git repo has not changes across all repo.
 
@@ -1045,7 +1147,7 @@ Targets:
    - `ROOT_GITIGNORE`=*PATH* - path to gitignore file for check (root .gitignore). Default `$(CURDIR)/.gitignore`
    - `GITIGNORES_WITH_REQUIRED_RULES`=*PATHS...* - comma separated paths to gitignore files that should contains `ROOT_GITIGNORE`.
 
-- `common/git/check/has-diff` - 
+- `common/git/check/has-diff` - check diff in repo and out diffed files.
   
   Params:
   - `TARGET_NAME`=*NAME* - if passed run make target before git diff check. Optional

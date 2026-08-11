@@ -243,7 +243,7 @@ common/git/check/gitignore: ## Check that gitignore file contains another gitign
 	done; \
 	exit 1
 
-common/git/check/has-diff: ## Check diff in repo
+common/git/check/has-diff: ## Check diff in repo and out diffed files
 	@##~ TARGET_NAME=NAME - if passed run make target before git diff check
 	@##~ HAS_DIFF_MSG=MSG - if has diff this message will be printed. Optional
 	@##~ FILES_TO_CHECK=REGEXPS... - comma separated paths regexp for check. Optional
