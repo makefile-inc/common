@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.11.0
+git fetch -a && git checkout v0.12.0
 popd
 ```
 
@@ -97,8 +97,9 @@ include $(CURDIR)/makefile-common/include.mk.inc
 ## Update as submodule
 
 ```bash
+pushd .
 cd makefile-common
-git fetch -a && git checkout NEW_TAG
+git fetch -a && git checkout v0.12.0
 popd
 ```
 
