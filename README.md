@@ -628,6 +628,8 @@ Next definitions can be included multiple times because sh redeclare function wi
       otherwise check all files.
     - `$3` - comma-separated grep patterns files to skip check diff. Optional 
        otherwise check all files.
+    - `$4` - get diff with passed git ref. Optional.
+       If not passed, do diff with current git repo state.
   Example:
   ```Makefile
   include *.mk

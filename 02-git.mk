@@ -17,6 +17,8 @@ GET_GIT_FILES_SEPARATOR = |||
 #            otherwise check all files.
 #       $3 - comma-separated grep patterns files to skip check diff. Optional 
 #            otherwise check all files.
+#       $4 - get diff with passed git ref. Optional.
+#            If not passed, do diff with current git repo state
 # Example include:
 #   @${INCLUDE_GIT_OPS} \ - slash is required!
 # Example:
@@ -74,6 +76,7 @@ function get_git_changed_files() { \
     local include_new="$${1:-}"; \
     local files_check="$${2:-}"; \
 	local files_skip="$${3:-}"; \
+	local with_ref="$${4:-}"; \
 	if [ -n "$$files_check" ]; then \
 		split_by_comma "__git_diff_patterns_for_check_arr" "$$files_check" "trim_spaces"; \
 	fi; \
@@ -81,9 +84,16 @@ function get_git_changed_files() { \
 		split_by_comma "__git_diff_patterns_for_skip_arr" "$$files_skip" "trim_spaces"; \
 	fi; \
 	local output=""; \
-	if ! output="$$(git diff --name-status)"; then \
-		echo_err "cannot run git diff"; \
-		return 255; \
+	if [ -z "$$with_ref" ]; then \
+		if ! output="$$(git diff --name-status)"; then \
+			echo_err "cannot run git diff"; \
+			return 255; \
+		fi; \
+	else \
+		if ! output="$$(git diff --name-status "$$with_ref")"; then \
+			echo_err "cannot run git diff with ref $$with_ref"; \
+			return 255; \
+		fi; \
 	fi; \
 	local new_output=""; \
 	if [[ "$$include_new" == "true" ]]; then \
