@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.10.0 && git pull
+git fetch -a && git checkout v0.11.0
 popd
 ```
 
@@ -98,7 +98,7 @@ include $(CURDIR)/makefile-common/include.mk.inc
 
 ```bash
 cd makefile-common
-git fetch -a && git checkout NEW_TAG && git pull
+git fetch -a && git checkout NEW_TAG
 popd
 ```
 
@@ -125,7 +125,7 @@ MAKEFLAGS += --no-print-directory
 ### Variables
 
 Now includes files in `common` repo contains next predefined variables:
-- `BINARIES_PATH` - dir to store local helper binaries. By default `$(CURDIR)/bin`.
+- `BINARIES_PATH` - dir to store local helper binaries. By default `$(CURDIR)/.bin`.
   Can be redeclared with `SET_BINARIES_PATH` variable.
   Also, includes add this path to `PATH` env when running make. 
 - Color variables, using for color output in terminal:
@@ -135,7 +135,9 @@ Now includes files in `common` repo contains next predefined variables:
   - `CYAN_COLOR`   - ${\color{cyan}cyan}$
   - `BOLD_COLOR`   - **bold**
   - `NO_COLOR`     - end coloring output.
+
   Can be used in Make file like:
+
   ```Makefile
   error:
   	echo -e "${RED_COLOR}Error!!!${NO_COLOR}"; \
@@ -154,13 +156,15 @@ Now includes files in `common` repo contains next predefined variables:
 - `YQ_BIN_FULL` - full path to local installed [yq](https://github.com/mikefarah/yq)
 - `BUILD_PATH` - directory to output builds (by default `$(CURDIR)/.build`). Can be redeclared with `SET_BUILD_PATH`
 - `RELEASE_PATH` - directory to output release artifacts (by default `$(CURDIR)/.release`). Can be redeclared with `SET_RELEASE_PATH`
+- `GET_GIT_FILES_SEPARATOR` - separator for returned string with list files path in `get_git_changed_files` util (see `INCLUDE_GIT_OPS` below).  
 
 ### Definitions
 
 #### Callable
 
 Next definitions can call in makefile with `$(shell $(call ...))` or `$(call ...)`:
-- `CHECK_BINARY` - check that local binary installed and have target version.  
+- `CHECK_BINARY` - check that local binary installed and have target version.
+
   Params:
   - `$(1)` - binary name in `BINARIES_PATH` dir.
   - `$(2)` - binary argument for consume current binary version.
@@ -182,6 +186,7 @@ Next definitions can call in makefile with `$(shell $(call ...))` or `$(call ...
 		fi
    ```
 - `RUN_WITH_CLEANUP` - run target and call another targets after run first (with or without error).
+
   Params:
    - `$(1)` - target for run.
    - `$(2)` - cleanup target.
@@ -207,6 +212,7 @@ do/some:
 - `NOW_MICROSECONDS` - call date and return to stdout current unix-time with microseconds.
    No params. Usefully with `HUMAN_DURATION_MICROSECONDS`.
 - `HUMAN_DURATION_MICROSECONDS` output duration microseconds in human way.
+
    Params:
    - `$1` - start microseconds unix-time (can get with `NOW_MICROSECONDS`)
    - `$2` - end microseconds unix-time (can get with `NOW_MICROSECONDS`)
@@ -232,6 +238,7 @@ do/some:
 - `RUN_WITH_DURATION` - call another target, calculate duration time and print duration.
   Warning! Because whe use call another bins in bash duration of target can little different 
   from run standalone.
+
   Params:
   - `$1` - makefile target
   - `$2` - human name of target for print.
@@ -296,32 +303,39 @@ Next definitions can be included multiple times because sh redeclare function wi
   	exit_with_err "Fail!" 3
   ```
 - `INCLUDE_SPLIT` - add next sh functions:
-    - `trim_spaces_left` - trim whitespaces from left
+    - `trim_spaces_left` - trim whitespaces from left.
+
       Arguments:
       - `$1` - string to trim
-    - `trim_spaces_right` - trim whitespaces from right
+    - `trim_spaces_right` - trim whitespaces from right.
+
       Arguments:
       - `$1` - string to trim
-    - `trim_spaces` - trim whitespaces from right and left
+    - `trim_spaces` - trim whitespaces from right and left.
+
       Arguments:
       - `$1` - string to trim
-    - `split_by` - split string by separator to global array
+    - `split_by` - split string by separator to global array.
+
       Arguments:
       - `$1` - separator (can be multi-character)
       - `$2` - name of destination array variable
       - `$3` - string to split
       - `$4` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
-    - `split_by_comma` - split string by comma-separator to global array
+    - `split_by_comma` - split string by comma-separator to global array.
+
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
       - `$3` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
-    - `split_by_space` - split string by space-separator to global array
+    - `split_by_space` - split string by space-separator to global array.
+
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
       - `$3` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
-    - `split_by_new_line` - split string by new-line-separator to global array
+    - `split_by_new_line` - split string by new-line-separator to global array.
+
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
@@ -401,41 +415,319 @@ Next definitions can be included multiple times because sh redeclare function wi
   	echo "Transform own:"; \
   	print_arr "$${transform_own_arr[@]}"
   ```
+- `INCLUDE_STRINGS` - add next sh functions (`INCLUDE_SPLIT` also included):
+    - `append_str_with_separator` - append string to end with separator prefix and return.
+      If append only one string, prefix will not add.
+
+      End of string always does not contains separator.
+
+      If append string is empty, return passed string.
+
+      If string for add is empty append string without separator.
+
+      Arguments:
+      - `$1` - separator, can be empty
+      - `$2` - string for add
+      - `$3` - append string
+    - `append_str_with_new_line - call `append_str_with_separator` with new line separator.
+
+      Arguments:
+      - `$1` - string for add
+      - `$2` - append string
+    - `shift_str_on` - split string by new line and add prefix (shift) for each line.
+
+      Arguments:
+      - `$1` - string to append prefix (shift)
+      - `$2` - count of prefixes to add. if not passed or empty will 1
+      - `$3` - prefix to add. if not passed or empty will use one space prefix
+    - `shift_str_on_tab` - call shift_str_on with tab prefix.
+
+      Arguments:
+      - `$1` - string to append prefix (shift)
+      - `$2` - count of prefixes to add. if not passed or empty will 1
+    - `escape_re_str` - escape string as regexp string (to pass to grep).
+
+      Arguments:
+      - `$1` - string to escape.
+
+  Example:
+  ```Makefile
+  include *.mk
+
+  _test/append-str-with:
+		@${INCLUDE_STRINGS} \
+		empty=""; \
+		empty="$$(append_str_with_separator "|" "$$empty" "first")"; \
+		echo "Empty after add first: '$$empty'"; \
+		empty="$$(append_str_with_separator "|" "$$empty" "second")"; \
+		echo "Empty after add second: '$$empty'"; \
+		empty="$$(append_str_with_separator "|" "$$empty" "third")"; \
+		echo "Empty after add third: '$$empty'"; \
+		not_empty="not empty"; \
+		not_empty="$$(append_str_with_separator " | " "$$not_empty" "first")"; \
+		echo "Not empty after add first: '$$not_empty'"; \
+		not_empty="$$(append_str_with_separator " | " "$$not_empty" "second")"; \
+		echo "Not empty after add second: '$$not_empty'"; \
+		not_empty="$$(append_str_with_separator " | " "$$not_empty" "third")"; \
+		echo "Not empty after add third: '$$not_empty'"; \
+		empty_with_empty_add=""; \
+		empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "")"; \
+		echo "Empty with empty add - add empty string: '$$empty_with_empty_add'"; \
+		empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "first")"; \
+		echo "Empty with empty add - after add first: '$$empty_with_empty_add'"; \
+		empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "")"; \
+		echo "Empty with empty add - second empty: '$$empty_with_empty_add'"; \
+		empty_with_empty_add="$$(append_str_with_separator "; " "$$empty_with_empty_add" "second")"; \
+		echo "Empty with empty add - add second: '$$empty_with_empty_add'"; \
+		append_new_line=""; \
+		append_new_line="$$(append_str_with_new_line "$$append_new_line" "")"; \
+		echo "Append with new line - add empty: '$$append_new_line'"; \
+		append_new_line="$$(append_str_with_new_line "$$append_new_line" "first str")"; \
+		echo "Append with new line - add first str: '$$append_new_line'"; \
+		append_new_line="$$(append_str_with_new_line "$$append_new_line" "second str")"; \
+		echo "Append with new line - add second str: '$$append_new_line'"
+
+  _test/shift-str-on:
+		@${INCLUDE_STRINGS} \
+		new_line=$$'\n'; \
+		one_string="one string"; \
+		one_string="$$(shift_str_on "$$one_string" "5" " ")"; \
+		echo "One string: '$$one_string'"; \
+		two_strings="first string$${new_line}second string"; \
+		two_strings="$$(shift_str_on "$$two_strings" "1" " - ")"; \
+		echo "Two strings: '$$two_strings'"; \
+		three_strings="first string$${new_line}second string$${new_line}third string"; \
+		three_strings="$$(shift_str_on "$$three_strings" "1" "** ")"; \
+		echo "three strings:"; \
+		echo "$$three_strings"; \
+		three_strings="$$(shift_str_on_tab "$$three_strings" "2")"; \
+		echo "three strings after shift on 2 tabs:"; \
+		echo "$$three_strings"
+
+  _test/escape-re:
+  	@${INCLUDE_STRINGS} \
+  	${INCLUDE_ECHO} \
+  	not_need="test str"; \
+  	for_escape="\$$var {input} [test-str] (**OOP**) \\do | not_do + ^HOME^ ."; \
+  	escaped_not_need="$$(escape_re_str "$$not_need")"; \
+  	escaped_for_escape="$$(escape_re_str "$$for_escape")"; \
+  	echo_info "Escape re '$$not_need': '$$escaped_not_need'"; \
+  	echo_info "Escape re '$$for_escape': '$$escaped_for_escape'"
+
+  ```
+- `INCLUDE_FS_CONSUME` - add next sh functions (`INCLUDE_ECHO` and `INCLUDE_STRINGS` also included):
+  - `toggle_globs` - enable/disable next globs params `dotglob` `nullglob` `globstar`.
+
+     Returns `255` code if error.
+
+     Arguments:
+     - `$1` - if `on` - enable globs, otherwise - disable
+  - `is_glob` - check passed string is glob string.
+
+     Returns `non-zero` if not glob.
+
+     Arguments:
+     - `$1` - string to check
+  - `do_in_dir` - cd to dir and do function, after call returns to current dir.
+
+     Function output will output as result of function.
+
+     Returns `255` code if has internal error
+
+     Otherwise, returns return code from function.
+
+     Arguments:
+     - `$1`  - dir to cd
+     - `$2`  - function to call
+     - `...` - another arguments will passed to function started from **second** arg, first argument is dir path.
+  - `foreach_dir_by_glob` - call function for each file found by glob.
+
+     Returns `255` exit code if has internal error.
+
+     **Warning!** If you need to find all files in dir and sub dirs,
+     pass glob with prefix `./**/`
+     
+     Passed function can return next return codes:
+       - `255` - will continue foreach, but `foreach_dir_by_glob` returns `1` return code.
+          Useful if need fail, but check all files. 
+       - `254` - will continue foreach, but `foreach_dir_by_glob` returns `zero` return code.
+          Useful if need skip some files. 
+       - `[1-253]` - immediately return from function with returned error code.
+
+     **Warning!** globs is enabled due to call function.
+ 
+     Arguments:
+     - `$1`  - if passes non empty string, will cd to directory and returns to current dir after call
+     - `$2`  - glob to find files
+     - `$3`  - function to call
+     - `...` - another arguments will passed to function started from **second** arg, first argument is file path. 
+  Example:
+  ```Makefile
+  include *.mk
+
+  _test/glob:
+		@${INCLUDE_FS_CONSUME} \
+		if is_glob "*.c?p"; then \
+			echo "Is glob!"; \
+		fi; \
+		if ! is_glob "./app"; then \
+			echo "Is not glob!"; \
+		fi
+
+  _test/fs-utils: _test/glob
+		$(MAKE) install/jq
+		@${INCLUDE_FS_CONSUME} \
+		function echo_file_with_prefix() { \
+			if [[ "$${1}" != "00-common.mk" ]]; then \
+				echo "[$${2}] Find file $${1}"; \
+				return 0; \
+			fi; \
+			return 254; \
+		}; \
+		function echo_file_with_prefix_fail() { \
+			if [[ "$${1}" != "00-common.mk" ]]; then \
+				echo "[$${2}] Find fail file $${1}"; \
+				return 0; \
+			fi; \
+			return 255; \
+		}; \
+		function echo_file_with_prefix_fail_fast() { \
+			if [[ "$${1}" != "03-versions.mk" ]]; then \
+				echo "[$${2}] Find file $${1}"; \
+				return 0; \
+			fi; \
+			echo_err "found fail fast file!"; \
+			return 1; \
+		}; \
+		if foreach_dir_by_glob "" "*.mk" echo_file_with_prefix "ok"; then \
+			echo ""; \
+			echo_info "foreach_dir_by_glob ok!"; \
+		fi; \
+		echo ""; \
+		if ! foreach_dir_by_glob "" "*.mk" echo_file_with_prefix_fail "fail"; then \
+			echo ""; \
+			echo_info "foreach_dir_by_glob failed!"; \
+		fi; \
+		echo ""; \
+		if ! foreach_dir_by_glob "" "*.mk" echo_file_with_prefix_fail_fast; then \
+			echo ""; \
+			echo_info "foreach_dir_by_glob failed fast!"; \
+		fi; \
+		echo ""; \
+		function ls_dir_ok() { \
+			echo "ls dir $${1}:"; \
+			if ! ls -lh "$${1}"; then \
+				echo_warn "ls failed but skipped"; \
+			fi; \
+			return 0; \
+		}; \
+		function ls_dir_fail_with_prefix() { \
+			echo "[$${2}] ls dir fail $${1}:"; \
+			if ! ls -lh "$${1}"; then \
+				echo_warn "ls failed but skipped"; \
+			fi; \
+			echo "error return"; \
+			return 1; \
+		}; \
+		if do_in_dir "$(BINARIES_PATH)" ls_dir_ok; then \
+			echo ""; \
+			echo_info "do_in_dir ok!"; \
+		fi; \
+		if ! do_in_dir "$(BINARIES_PATH)" ls_dir_fail_with_prefix "fail prefix"; then \
+			echo ""; \
+			echo_info "do_in_dir failed!"; \
+		fi
+
+  ```
+- `INCLUDE_GIT_OPS` - add next sh function (`INCLUDE_ECHO` and `INCLUDE_STRINGS` also included):
+  - `is_git_repo_has_not_changes` - returns `1` if git repo **has** diff (uncommit changes).
+
+    Returns `255` code if has internal error. 
+  - `get_git_changed_files` - returns `1` and echo list of files have changes in one string separated by `$(GET_GIT_FILES_SEPARATOR)`.
+
+     Returns `255` code if has internal error.
+
+     Returns `zero` code if git repo has not changes.
+
+     Arguments:
+    - `$1` - if passed `true` also new files will returned
+    - `$2` - comma-separated grep patterns files to check diff. Optional 
+      otherwise check all files.
+    - `$3` - comma-separated grep patterns files to skip check diff. Optional 
+       otherwise check all files.
+    - `$4` - get diff with passed git ref. Optional.
+       If not passed, do diff with current git repo state.
+
+  Example:
+  ```Makefile
+  include *.mk
+
+  repo-has-diff:
+		@${INCLUDE_GIT_OPS} \
+		if ! is_git_repo_has_not_changes; then \
+			exit 1; \
+		fi;
+   echo-has-diff:
+		@${INCLUDE_GIT_OPS} \
+		diffed_files_str=""; \
+		if diffed_files_str="$$(get_git_changed_files "$$with_new_files" "$$files_check" "$$files_skip")"; then \
+			exit 0; \
+		else \
+			ret_code="$$?"; \
+			if [[ "$$ret_code" == "255" ]]; then \
+				exit_with_err "Has internal error ^^^"; \
+			fi; \
+		fi; \
+		diffed_files=(); \
+		split_by "$(GET_GIT_FILES_SEPARATOR)" "diffed_files" "$$diffed_files_str"; \
+		msg="$${HAS_DIFF_MSG:-}"; \
+		if [ -n "$$msg" ]; then \
+			exit_with_err "$$msg"; \
+		fi; \
+		echo_err "Files changed:"; \
+		for chn_f in "$${diffed_files[@]}"; do \
+			echo_err "  $$chn_f"; \
+		done; \
+		exit 1
+  ```
 - `INCLUDE_CHECK_BINARY` - add next sh function (`INCLUDE_ECHO` also included):
     - `check_binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version.
-        Arguments:
-        - `$1` - binary name without path
-        - `$2` - version argument for binary for extract version
-        - `$3` - version to check. Function uses grep for match version
 
-        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+      Arguments:
+      - `$1` - binary name without path
+      - `$2` - version argument for binary for extract version
+      - `$3` - version to check. Function uses grep for match version
+
+      If binary present and executable and have correct version returns zero code, otherwise - `1`, invalid args - `2`.
     - `check_and_download_bin` - check that binary is exists in `BINARIES_PATH` and executable and have correct version
-                                 if not - download.
-        Arguments:
-        - `$1` - url to download. Can be contains next string for substitution
-          - `@BIN_VER@ ` - replace to version passed via `$3`
-          - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin) 
-          - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64) 
-        - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
-        - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
-        - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+      if not - download.
 
-        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+      Arguments:
+      - `$1` - url to download. Can be contains next string for substitution
+        - `@BIN_VER@ ` - replace to version passed via `$3`
+        - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin) 
+        - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64) 
+      - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
+      - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
+      - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+
+      If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
     - `check_and_get_bin` - check that binary is exists in `BINARIES_PATH` and executable and have correct version
-                            if not - call passed function for get binary.
-        Arguments:
-        - `$1` - function name for get binary. Function pass next args to get function
-          - `$1` - version of binary
-          - `$2` - arch (amd64 or arm64)
-          - `$3` - os (linux or darwin) 
-          - `$4` - binary name only 
-          - `$5` - full binary path
-          - `$6` - binaries path $(BINARIES_PATH) 
-        - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
-        - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
-        - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+      if not - call passed function for get binary.
 
-        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+      Arguments:
+      - `$1` - function name for get binary. Function pass next args to get function
+        - `$1` - version of binary
+        - `$2` - arch (amd64 or arm64)
+        - `$3` - os (linux or darwin) 
+        - `$4` - binary name only 
+        - `$5` - full binary path
+        - `$6` - binaries path $(BINARIES_PATH) 
+      - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
+      - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
+      - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+
+      If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
 
   Example:
   ```Makefile
@@ -499,6 +791,7 @@ Next definitions can be included multiple times because sh redeclare function wi
 
 - `INCLUDE_BUILD_OUT_NAME` - add next sh function:
   - `build_out_name` - print binary name for build.
+
       Arguments:
       - `$1` - project name. Required. Also can be passed via env `PROJECT_NAME`.
       - `$2` - platform (os) name. Optional. By default get from `$(OS_CALCULATED)`.
@@ -529,7 +822,8 @@ Next definitions can be included multiple times because sh redeclare function wi
 	    	fi; \
       	echo "$$name"
 - `INCLUDE_BIN_DYNAMIC` - add next sh function:
-   - `check_dynamic_executable` - check that binary is dynamic linked or not
+   - `check_dynamic_executable` - check that binary is dynamic linked or not.
+
       Arguments:
       - `$1` - binary path. Required. Also can be passed via env `TARGET_BIN_TO_CHECK`
       - `$2` - if not empty check that executable is dynamic-linked, otherwise that static linked
@@ -759,7 +1053,112 @@ Targets:
     - `/README.md`
     - `/LICENSE`
 
+### License header check
+
+#### Description
+
+If you need to check that source files contains license header comment
+you can use `common/license/check` target.
+
+By default, target grep all files for next strings:
+
+```
+${COMMENT_PREFIX} Copyright \d{4}
+${COMMENT_PREFIX} license that can be found in the LICENSE file.
+```
+
+like (for bash):
+```bash
+# Copyright 2026
+# license that can be found in the LICENSE file.
+```
+
+If you need to check your own license header you can pass `FULL_COMMENT_STR`
+with license header regexp **(all regexp special symbols should be escaped!)**, like (for c++):
+
+```cpp
+/\*\*
+\s+My company name
+\s+All rights reserved
+\*\*/
+```
+
+Target split this line and create multiline regexp.
+
+By default, targets check all files in current branch.
+If you need to check only changed files between branches (default and current),
+pass `ONLY_CHANGED_WITH` param with 'default' branch (git ref).
+
+**Warning! If your project contains multiple sub-projects with different license
+or you need to check separate files types (extensions), you need to call target
+multiple times. For this you should use recursive `make` call for prevent
+cache target run, like:**
+
+```Makefile
+include *.mk
+
+check-license/go: export EXTENSION_TO_CHECK = go
+check-license/go: export COMMENT_PREFIX = //
+check-license/go:
+  @$(MAKE) common/license/check
+
+check-license/bash: export EXTENSION_TO_CHECK = sh
+check-license/bash: export COMMENT_PREFIX = \#
+check-license/bash:
+  @$(MAKE) common/license/check
+
+check-license: check-license/go check-license/bash
+```
+
+#### Targets
+
+- `common/license/check` - check that all files with extension have license head.
+  
+  Params:
+  - `EXTENSION_TO_CHECK`=*EXT* - extension for find files for check. Required.
+	  Should not contains leading `*` and dot `.`.
+	  For example: `go`
+  - `ONLY_IN_SUB_DIR`=*PATH*   - If passed will find files in passed sub-path 
+	  as `$(CURDIR)/ONLY_IN_SUB_DIR`, By default, find in `$(CURDIR)`
+  - `COMMENT_PREFIX`=*PREFIX*  - If passed check next strings with this prefix:
+    ```
+    Copyright YEAR
+    license that can be found in the LICENSE file.
+    ```
+	  If not passed, should pass `FULL_COMMENT_STR`
+  - `FULL_COMMENT_STR`=*REGEX*   - If passed check split string by new line
+	  and add each line to grep multiline pattern
+	  Each line can be regexp with escape special symbols.
+	  If not passed should pass COMMENT_PREFIX
+  - `SKIP_FILES`=*PATHS*       - comma separated paths without ext for skip checking. Optional
+  - `ONLY_CHANGED_WITH`=*REF*  - git ref to check diff. If passed get diff from current and passed ref
+	  and check files that changed between current and passed ref.
+	  Optional.
+
+  Examples:
+  - full comment regexp with only changed files between default (`main`) branch 
+    ```Makefile
+    define FULL_COMMENT
+    /\*\*
+    \s+My company name
+    \s+All rights reserved
+    \*\*/
+    endef
+    check-license/h: export EXTENSION_TO_CHECK = h
+    check-license/h: export ONLY_CHANGED_WITH = main
+    check-license/h: export FULL_COMMENT_STR = ${FULL_COMMENT}
+    check-license/h:
+	    @$(MAKE) common/license/check
+    check-license/cpp: export EXTENSION_TO_CHECK = cpp
+    check-license/cpp: export ONLY_CHANGED_WITH = main
+    check-license/cpp: export FULL_COMMENT_STR = ${FULL_COMMENT}
+    check-license/cpp:
+	    @$(MAKE) common/license/check
+    check-license: check-license/h check-license/cpp
+    ```
+
 ### Git
+- `common/git/check/no-changes` - check that git repo has not changes across all repo.
 
 - `common/git/check/gitignore` - check that gitignore file contains another gitignore files rules.
    Usefully for checking in another includes repos and root makefile that all gitignore rules
@@ -769,14 +1168,17 @@ Targets:
    - `ROOT_GITIGNORE`=*PATH* - path to gitignore file for check (root .gitignore). Default `$(CURDIR)/.gitignore`
    - `GITIGNORES_WITH_REQUIRED_RULES`=*PATHS...* - comma separated paths to gitignore files that should contains `ROOT_GITIGNORE`.
 
-- `common/git/check/has-diff` - check that repo has difference
+- `common/git/check/has-diff` - check diff in repo and out diffed files.
   
   Params:
-  - `TARGET_NAME`=*NAME* - if passed run make target before git check. Optional
-  - `HAS_DIFF_MSG`=*MSG* - if has diff this message will be printed. Optional. If not passed print files.
+  - `TARGET_NAME`=*NAME* - if passed run make target before git diff check. Optional
+  - `HAS_DIFF_MSG`=*MSG* - if has diff this message will be printed. Optional. If not passed print files only.
   - `FILES_TO_CHECK`=*REGEXPS...* - comma separated paths regexp for check. Optional
   - `FILES_TO_SKIP`=*REGEXPS...*  - comma separated paths regexp for skip. Optional. Has higher priority.
-  
+  - `SKIP_NEW_FILES`=*true* - if `FILES_TO_CHECK` and `FILES_TO_SKIP` not passed
+    target will out new files to diff. If passed new files will not.
+    If passed, new files will not include to diff.
+
   Examples:
   ```bash
   make common/git/check/has-diff FILES_TO_SKIP=".*.mk" FILES_TO_CHECK=".*.mk" TARGET_NAME="build/dir"

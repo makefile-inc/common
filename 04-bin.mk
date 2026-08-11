@@ -1,3 +1,6 @@
+# Copyright 2026
+# license that can be found in the LICENSE file.
+
 # INCLUDE_CHECK_BINARY - add next sh function:
 #   check_binary - check that binary is exists in BINARIES_PATH and executable and have correct version
 #     Arguments:
@@ -345,7 +348,7 @@ JQ_PLATFORM_ARCH = $(JQ_PLATFORM)-$(ARCH_CALCULATED)
 ##@ Common. Directories
 
 bin: ## Make bin directory
-	@##~ SET_BINARIES_PATH=PATH - dir utils binaries. By default $(CURDIR)/bin
+	@##~ SET_BINARIES_PATH=PATH - dir utils binaries. By default $(CURDIR)/.bin
 	@mkdir -p "$(BINARIES_PATH)"
 
 ##@ Common. Checks binary is installed in system

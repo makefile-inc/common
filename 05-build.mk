@@ -1,3 +1,6 @@
+# Copyright 2026
+# license that can be found in the LICENSE file.
+
 ifndef SET_BUILD_PATH
   SET_BUILD_PATH = $(CURDIR)/.build
 endif
