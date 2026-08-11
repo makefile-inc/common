@@ -127,3 +127,5 @@ common/license/check: ## Check that all files with extension have license head
 	if [ -n "$$out" ]; then \
 		echo_info "$$out"; \
 	fi
+
+.PHONY: common/license/check
