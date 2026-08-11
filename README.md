@@ -432,6 +432,10 @@ Next definitions can be included multiple times because sh redeclare function wi
       Arguments:
       - `$1` - string to append prefix (shift)
       - `$2` - count of prefixes to add. if not passed or empty will 1
+    - `escape_re_str` - escape string as regexp string (to pass to grep).
+
+      Arguments:
+      - `$1` - string to escape.
 
   Example:
   ```Makefile
@@ -486,6 +490,16 @@ Next definitions can be included multiple times because sh redeclare function wi
 		three_strings="$$(shift_str_on_tab "$$three_strings" "2")"; \
 		echo "three strings after shift on 2 tabs:"; \
 		echo "$$three_strings"
+
+  _test/escape-re:
+  	@${INCLUDE_STRINGS} \
+  	${INCLUDE_ECHO} \
+  	not_need="test str"; \
+  	for_escape="\$$var {input} [test-str] (**OOP**) \\do | not_do + ^HOME^ ."; \
+  	escaped_not_need="$$(escape_re_str "$$not_need")"; \
+  	escaped_for_escape="$$(escape_re_str "$$for_escape")"; \
+  	echo_info "Escape re '$$not_need': '$$escaped_not_need'"; \
+  	echo_info "Escape re '$$for_escape': '$$escaped_for_escape'"
 
   ```
 - `INCLUDE_FS_CONSUME` - add next sh functions (`INCLUDE_ECHO` and `INCLUDE_STRINGS` also included):

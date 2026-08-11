@@ -187,6 +187,9 @@ endef
 #     Arguments:
 #       $1 - string to append prefix (shift)
 #       $2 - count of prefixes to add. if not passed or empty will 1
+#   escape_re_str - escape string as regexp string (to pass to grep).
+#     Arguments:
+#       $1 - string to escape
 # Example include:
 #   @${INCLUDE_STRINGS} \ - slash is required!
 # Example:
@@ -240,9 +243,27 @@ endef
 #		three_strings="$$(shift_str_on_tab "$$three_strings" "2")"; \
 #		echo "three strings after shift on 2 tabs:"; \
 #		echo "$$three_strings"
+#	_test/escape-re:
+#		@${INCLUDE_STRINGS} \
+#		${INCLUDE_ECHO} \
+#		not_need="test str"; \
+#		for_escape="\$$var {input} [test-str] (**OOP**) \\do | not_do + ^HOME^ ."; \
+#		escaped_not_need="$$(escape_re_str "$$not_need")"; \
+#		escaped_for_escape="$$(escape_re_str "$$for_escape")"; \
+#		echo_info "Escape re '$$not_need': '$$escaped_not_need'"; \
+#		echo_info "Escape re '$$for_escape': '$$escaped_for_escape'"
 # Can be included multiple times because sh redeclare function without error
 define INCLUDE_STRINGS
 ${INCLUDE_SPLIT} \
+function escape_re_str() { \
+	local str="$${1:-}"; \
+	if [ -z "$$str" ]; then \
+		echo -n ""; \
+		return 0; \
+	fi; \
+	local escaped="$$(printf '%s' "$$str" | sed 's/[.[\*^$$()+?{|]/\\&/g')"; \
+	echo -n "$$escaped"; \
+}; \
 function append_str_with_separator() { \
 	local sep="$${1:-}"; \
 	local str="$${2:-}"; \
