@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.10.0
+git fetch -a && git checkout v0.11.0
 popd
 ```
 
@@ -135,7 +135,9 @@ Now includes files in `common` repo contains next predefined variables:
   - `CYAN_COLOR`   - ${\color{cyan}cyan}$
   - `BOLD_COLOR`   - **bold**
   - `NO_COLOR`     - end coloring output.
+
   Can be used in Make file like:
+
   ```Makefile
   error:
   	echo -e "${RED_COLOR}Error!!!${NO_COLOR}"; \
@@ -161,7 +163,8 @@ Now includes files in `common` repo contains next predefined variables:
 #### Callable
 
 Next definitions can call in makefile with `$(shell $(call ...))` or `$(call ...)`:
-- `CHECK_BINARY` - check that local binary installed and have target version.  
+- `CHECK_BINARY` - check that local binary installed and have target version.
+
   Params:
   - `$(1)` - binary name in `BINARIES_PATH` dir.
   - `$(2)` - binary argument for consume current binary version.
@@ -183,6 +186,7 @@ Next definitions can call in makefile with `$(shell $(call ...))` or `$(call ...
 		fi
    ```
 - `RUN_WITH_CLEANUP` - run target and call another targets after run first (with or without error).
+
   Params:
    - `$(1)` - target for run.
    - `$(2)` - cleanup target.
@@ -208,6 +212,7 @@ do/some:
 - `NOW_MICROSECONDS` - call date and return to stdout current unix-time with microseconds.
    No params. Usefully with `HUMAN_DURATION_MICROSECONDS`.
 - `HUMAN_DURATION_MICROSECONDS` output duration microseconds in human way.
+
    Params:
    - `$1` - start microseconds unix-time (can get with `NOW_MICROSECONDS`)
    - `$2` - end microseconds unix-time (can get with `NOW_MICROSECONDS`)
@@ -233,6 +238,7 @@ do/some:
 - `RUN_WITH_DURATION` - call another target, calculate duration time and print duration.
   Warning! Because whe use call another bins in bash duration of target can little different 
   from run standalone.
+
   Params:
   - `$1` - makefile target
   - `$2` - human name of target for print.
@@ -297,32 +303,39 @@ Next definitions can be included multiple times because sh redeclare function wi
   	exit_with_err "Fail!" 3
   ```
 - `INCLUDE_SPLIT` - add next sh functions:
-    - `trim_spaces_left` - trim whitespaces from left
+    - `trim_spaces_left` - trim whitespaces from left.
+
       Arguments:
       - `$1` - string to trim
-    - `trim_spaces_right` - trim whitespaces from right
+    - `trim_spaces_right` - trim whitespaces from right.
+
       Arguments:
       - `$1` - string to trim
-    - `trim_spaces` - trim whitespaces from right and left
+    - `trim_spaces` - trim whitespaces from right and left.
+
       Arguments:
       - `$1` - string to trim
-    - `split_by` - split string by separator to global array
+    - `split_by` - split string by separator to global array.
+
       Arguments:
       - `$1` - separator (can be multi-character)
       - `$2` - name of destination array variable
       - `$3` - string to split
       - `$4` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
-    - `split_by_comma` - split string by comma-separator to global array
+    - `split_by_comma` - split string by comma-separator to global array.
+
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
       - `$3` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
-    - `split_by_space` - split string by space-separator to global array
+    - `split_by_space` - split string by space-separator to global array.
+
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
       - `$3` - function name to transform all values (like `trim_spaces`). got string argument and returns string. Optional
-    - `split_by_new_line` - split string by new-line-separator to global array
+    - `split_by_new_line` - split string by new-line-separator to global array.
+
       Arguments:
       - `$1` - name of destination array variable
       - `$2` - string to split
@@ -678,39 +691,42 @@ Next definitions can be included multiple times because sh redeclare function wi
   ```
 - `INCLUDE_CHECK_BINARY` - add next sh function (`INCLUDE_ECHO` also included):
     - `check_binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version.
-        Arguments:
-        - `$1` - binary name without path
-        - `$2` - version argument for binary for extract version
-        - `$3` - version to check. Function uses grep for match version
 
-        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+      Arguments:
+      - `$1` - binary name without path
+      - `$2` - version argument for binary for extract version
+      - `$3` - version to check. Function uses grep for match version
+
+      If binary present and executable and have correct version returns zero code, otherwise - `1`, invalid args - `2`.
     - `check_and_download_bin` - check that binary is exists in `BINARIES_PATH` and executable and have correct version
-                                 if not - download.
-        Arguments:
-        - `$1` - url to download. Can be contains next string for substitution
-          - `@BIN_VER@ ` - replace to version passed via `$3`
-          - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin) 
-          - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64) 
-        - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
-        - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
-        - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+      if not - download.
 
-        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+      Arguments:
+      - `$1` - url to download. Can be contains next string for substitution
+        - `@BIN_VER@ ` - replace to version passed via `$3`
+        - `@BIN_OS@`   - replace to calculated os name `$(OS_CALCULATED)` (linux or darwin) 
+        - `@BIN_ARCH@` - replace to calculated os name `$(ARCH_CALCULATED)` (amd64 or arm64) 
+      - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
+      - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
+      - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+
+      If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
     - `check_and_get_bin` - check that binary is exists in `BINARIES_PATH` and executable and have correct version
-                            if not - call passed function for get binary.
-        Arguments:
-        - `$1` - function name for get binary. Function pass next args to get function
-          - `$1` - version of binary
-          - `$2` - arch (amd64 or arm64)
-          - `$3` - os (linux or darwin) 
-          - `$4` - binary name only 
-          - `$5` - full binary path
-          - `$6` - binaries path $(BINARIES_PATH) 
-        - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
-        - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
-        - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+      if not - call passed function for get binary.
 
-        If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
+      Arguments:
+      - `$1` - function name for get binary. Function pass next args to get function
+        - `$1` - version of binary
+        - `$2` - arch (amd64 or arm64)
+        - `$3` - os (linux or darwin) 
+        - `$4` - binary name only 
+        - `$5` - full binary path
+        - `$6` - binaries path $(BINARIES_PATH) 
+      - `$2` - binary name without path (can be passed with env `INSTALL_BIN_NAME`)
+      - `$3` - version argument passed in binary for extract version (can be passed with env `INSTALL_BIN_VERSION_ARG`)
+      - `$4` - version to check. Function uses grep for match version (can be passed with env `INSTALL_BIN_VERSION`)
+
+      If binary present and executable and have correct version returns zero code, otherwise - 1, invalid args - 2
 
   Example:
   ```Makefile
@@ -774,6 +790,7 @@ Next definitions can be included multiple times because sh redeclare function wi
 
 - `INCLUDE_BUILD_OUT_NAME` - add next sh function:
   - `build_out_name` - print binary name for build.
+
       Arguments:
       - `$1` - project name. Required. Also can be passed via env `PROJECT_NAME`.
       - `$2` - platform (os) name. Optional. By default get from `$(OS_CALCULATED)`.
@@ -804,7 +821,8 @@ Next definitions can be included multiple times because sh redeclare function wi
 	    	fi; \
       	echo "$$name"
 - `INCLUDE_BIN_DYNAMIC` - add next sh function:
-   - `check_dynamic_executable` - check that binary is dynamic linked or not
+   - `check_dynamic_executable` - check that binary is dynamic linked or not.
+
       Arguments:
       - `$1` - binary path. Required. Also can be passed via env `TARGET_BIN_TO_CHECK`
       - `$2` - if not empty check that executable is dynamic-linked, otherwise that static linked
@@ -1126,10 +1144,12 @@ check-license: check-license/go check-license/bash
     \*\*/
     endef
     check-license/h: export EXTENSION_TO_CHECK = h
+    check-license/h: export ONLY_CHANGED_WITH = main
     check-license/h: export FULL_COMMENT_STR = ${FULL_COMMENT}
     check-license/h:
 	    @$(MAKE) common/license/check
     check-license/cpp: export EXTENSION_TO_CHECK = cpp
+    check-license/cpp: export ONLY_CHANGED_WITH = main
     check-license/cpp: export FULL_COMMENT_STR = ${FULL_COMMENT}
     check-license/cpp:
 	    @$(MAKE) common/license/check
