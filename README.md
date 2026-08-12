@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.14.0
+git fetch -a && git checkout v0.15.0
 popd
 ```
 
@@ -99,7 +99,7 @@ include $(CURDIR)/makefile-common/include.mk.inc
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.14.0
+git fetch -a && git checkout v0.15.0
 popd
 ```
 
@@ -547,6 +547,8 @@ Next definitions can be included multiple times because sh redeclare function wi
 
      **Warning!** If you need to find all files in dir and sub dirs,
      pass glob with prefix `./**/`
+
+     If no any files not found, return 0.
      
      Passed function can return next return codes:
        - `255` - will continue foreach, but `foreach_dir_by_glob` returns `1` return code.

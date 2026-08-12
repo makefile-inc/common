@@ -610,6 +610,11 @@ define FULL_COMMENT
 # license that can be found in the LICENSE file.
 endef
 
+_test/license/current/no-files: export EXTENSION_TO_CHECK = go
+_test/license/current/no-files: export COMMENT_PREFIX = \#
+_test/license/current/no-files: 
+	@$(MAKE) common/license/check
+
 _test/license/current: export EXTENSION_TO_CHECK = mk
 _test/license/current: export COMMENT_PREFIX = \#
 _test/license/current: 
@@ -626,7 +631,7 @@ _test/license/current/with-main: export ONLY_CHANGED_WITH = main
 _test/license/current/with-main:
 	@$(MAKE) common/license/check || true
 
-_test/license: _test/license/current _test/license/current/full _test/license/current/with-main
+_test/license: _test/license/current _test/license/current/full _test/license/current/with-main _test/license/current/no-files
 
 _test/clean: clean/common clean/build clean/release _clean/dummy
 
