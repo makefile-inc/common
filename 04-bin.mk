@@ -453,4 +453,4 @@ clean/common: ## Remove common binaries from local bin dir
 	@rm -fv "$(JQ_BIN_FULL)"
 	@rm -fv "$(YQ_BIN_FULL)"
 
-.PHONY: check/installed/bin check/installed/tar check/installed/find check/installed/sha256sum check/installed/curl check/installed/docker install/binary install/jq install/yq install/common/all clean/common check/bin/linked/dynamic check/bin/linked/static
+.PHONY: bin check/installed/bin check/installed/tar check/installed/find check/installed/sha256sum check/installed/curl check/installed/docker install/binary install/jq install/yq install/common/all clean/common check/bin/linked/dynamic check/bin/linked/static

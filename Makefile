@@ -630,4 +630,4 @@ _test/license: _test/license/current _test/license/current/full _test/license/cu
 
 _test/clean: clean/common clean/build clean/release _clean/dummy
 
-_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/release _test/clean _test/executable _test/license _test/str-utils _test/fs-utils
+_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/release _test/executable _test/license _test/str-utils _test/fs-utils _test/clean
