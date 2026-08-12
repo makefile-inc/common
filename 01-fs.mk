@@ -28,7 +28,8 @@
 #       254 - will continue foreach, but foreach_dir_by_glob returns zero return code.
 #             Useful if need skip some files. 
 #       [1-253] - immediately return from function with returned error code
-#     Warning! globs is enabled due to call function. 
+#     Warning! globs is enabled due to call function.
+#     If no any files not found, return 0.
 #     Arguments:
 #       $1  - if passes non empty string, will cd to directory and returns to current dir after call
 #       $2  - glob to find files
@@ -219,7 +220,7 @@ function foreach_dir_by_glob() { \
 		fi; \
 	fi; \
 	toggle_globs "on"; \
-	local ret_code=""; \
+	local ret_code="0"; \
 	local do_out=""; \
 	local new_line=$$'\n'; \
 	for fl in $$glob_str; do \
