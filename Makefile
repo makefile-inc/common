@@ -1,4 +1,4 @@
-include *.mk
+include include.mk.inc
 
 DUMMY_BIN = dummy
 DUMMY_FULL_BIN = $(BINARIES_PATH)/$(DUMMY_BIN)
