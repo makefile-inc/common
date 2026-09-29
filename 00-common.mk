@@ -126,18 +126,3 @@ function exit_with_err() { \
 	exit "$$exit_code"; \
 };
 endef
-
-help:
-	@echo -e "Usage: make ${YELLOW_COLOR}<target>${NO_COLOR} ${CYAN_COLOR}OPTION${NO_COLOR}=<value>"; \
-	printf "  ${YELLOW_COLOR}%-42s${NO_COLOR}  %s\n" "help" "Show this message"; \
-	for inc in $(MAKEFILE_LIST); do \
-		$(AWK_BIN) 'BEGIN { \
-	    		FS = ":.*##"; \
-	  		} \
-	  		/^[a-zA-Z0-9_-/]+:.*?##/ { printf "  ${YELLOW_COLOR}%-42s${NO_COLOR} %s\n", $$1, $$2 } \
-	  		/^.?.?##~/               { printf "     %-42s${CYAN_COLOR}%-42s${NO_COLOR}\n", "", substr($$1, 6) } \
-	  		/^##@/                   { printf "\n${BOLD_COLOR}%s${NO_COLOR}\n", substr($$0, 5) } ' \
-		"$$inc"; \
-	done
-
-.PHONY: help

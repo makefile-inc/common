@@ -3,6 +3,8 @@ include include.mk.inc
 DUMMY_BIN = dummy
 DUMMY_FULL_BIN = $(BINARIES_PATH)/$(DUMMY_BIN)
 
+##@ Tests for common
+
 _test/install/dummy: export INSTALL_BIN_NAME = $(DUMMY_BIN)
 _test/install/dummy: export INSTALL_BIN_VERSION_ARG = ver
 _test/install/dummy: export INSTALL_BIN_VERSION = 0.0.1
@@ -609,6 +611,15 @@ define FULL_COMMENT
 # Copyright \d{4}
 # license that can be found in the LICENSE file.
 endef
+
+_test/help/in-end: ## Help in end test
+	@##~ PRINT_PARAM=STR - Print string
+	@##~                   Optional. Default: NOT_SET
+	@if [ -z "$$PRINT_PARAM" ]; then \
+		PRINT_PARAM="NOT_SET"; \
+	fi; \
+	echo "PRINT_PARAM: '$$PRINT_PARAM'"
+	
 
 _test/license/current/no-files: export EXTENSION_TO_CHECK = go
 _test/license/current/no-files: export COMMENT_PREFIX = \#
