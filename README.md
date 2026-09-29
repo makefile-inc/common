@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.15.0
+git fetch -a && git checkout v0.16.0
 popd
 ```
 
@@ -99,7 +99,7 @@ include $(CURDIR)/makefile-common/include.mk.inc
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.15.0
+git fetch -a && git checkout v0.16.0
 popd
 ```
 
@@ -516,6 +516,15 @@ Next definitions can be included multiple times because sh redeclare function wi
   	echo_info "Escape re '$$for_escape': '$$escaped_for_escape'"
 
   ```
+- `INCLUDE_MAKE_HELP` - add next sh functions:
+  - `out_help_for_file` - output help for Makefile file.
+    Arguments:
+     - `$1` - Makefile file path.
+   
+  Add next variables:
+  - `CURRENT_MAKEFILE_PATH` - current run Makefile (not absolute)
+  - `CURRENT_MAKEFILE_PATH_FULL` - current run Makefile (absolute path)
+
 - `INCLUDE_FS_CONSUME` - add next sh functions (`INCLUDE_ECHO` and `INCLUDE_STRINGS` also included):
   - `toggle_globs` - enable/disable next globs params `dotglob` `nullglob` `globstar`.
 
@@ -860,7 +869,14 @@ Next definitions can be included multiple times because sh redeclare function wi
 ### Help
 
 - `help` - print help for all marked targets in root Makefile and all includes. Set as default target.
-  See instruction for add help and examples [below](#add-targets-to-help-output)
+  See instruction for add help and examples [below](#add-targets-to-help-output).
+
+  Params:
+  - `HELP_DISABLE_LIBRARIES`=*true* - if passed output target only from running Makefile.
+    If passed ignore another options.
+  - `HELP_LIBRARIES_FIRST`=*true* - if passed output targets from running Makefile last, libraries first.
+  - `HELP_LIBRARIES_OUT`=*PATHS..* - comma separated full paths libraries for output
+    Optional. Can be set with `HELP_LIBRARIES_FIRST`.
 
 ### Third-party binaries
 
@@ -1259,4 +1275,138 @@ cleanup/linux: ## Cleanup linux build artifacts
 cleanup/mac: ## Cleanup mac build artifacts
 	@rm -rm build/mac
 cleanup: cleanup/linux cleanup/mac ## Cleanup all build artifacts
+```
+
+#### Customize output help in our project
+
+By default, if you use `help` target, target output all libraries target and
+all your `Makefile` output in top of output. It is not comfortable.  
+
+Now, you customize output with next variables. For set variables you can write in 
+top of you `Makefile`:
+
+```Makefile
+HELP_DISABLE_LIBRARIES := true
+export HELP_DISABLE_LIBRARIES
+....
+```
+
+**Warning! Help message for `help` target always output on top of help output!** 
+
+##### Disable output libraries
+
+For disable output libraries targets (output targets only in you `Makefile` and only `Makefile`):
+
+```Makefile
+HELP_DISABLE_LIBRARIES := true
+export HELP_DISABLE_LIBRARIES
+```
+
+**Warning! if you use option `HELP_DISABLE_LIBRARIES`, another options will skip!**
+
+##### Output libraries targets first, your in the end
+
+Also, you can output libraries on top and your targets in the end with `HELP_LIBRARIES_FIRST`:
+
+```Makefile
+HELP_LIBRARIES_FIRST := true
+export HELP_LIBRARIES_FIRST
+```
+
+##### Output not all libraries
+
+Also, you can output some libraries in output. For this set full path directories separated by comma
+in variable `HELP_LIBRARIES_OUT`. Another `makefile.inc` repos include `make` variables with 
+directory of submodule repo in `include.mk.full.inc` or `include.mk.inc` files in format
+`_INC_MK_NAME_ROOT_DIR` like `_INC_MK_GIT_CRYPT_ROOT_DIR` you can use it in this variable like:
+
+```Makefile
+HELP_LIBRARIES_OUT := $(_INC_MK_GIT_CRYPT_ROOT_DIR)
+export HELP_LIBRARIES_OUT
+```
+
+If you separate you `Makefile` for your own includes, you can add `$(CURDIR)` in the list like:
+
+```Makefile
+HELP_LIBRARIES_OUT := $(_INC_MK_GIT_CRYPT_ROOT_DIR),$(CURDIR)
+export HELP_LIBRARIES_OUT
+```
+
+#### Header for you Makefile
+
+For comfortable output, please add [group targets header](#group-targets) to top of you `Makefile`
+for logical separating from libraries targets.
+
+For example, If you do not need add your own target header, you `Makefile` contains target
+`_test/help/in-end` and run 
+
+```bash
+make HELP_DISABLE_LIBRARIES=true
+```
+
+you will get next mixed output:
+
+```
+Usage: make <target> OPTION=<value>
+
+Common. Makefile help
+  help                                        Show this message
+                                                HELP_DISABLE_LIBRARIES=true - if passed output target only from running Makefile
+                                                                            - If passed ignore another options.
+                                                HELP_LIBRARIES_FIRST=true   - if passed output targets from running Makefile last,
+                                                                            - libraries first
+                                                HELP_LIBRARIES_OUT=PATHS..  - Comma separated full paths libraries for output
+                                                                            - Optional. Can be set with HELP_LIBRARIES_FIRST
+  _test/help/in-end                           Help in end test
+                                                PRINT_PARAM=STR - Print string           
+                                                                  Optional. Default: NOT_SET
+```
+
+And, for example, if you add header `My super project` like:
+
+```Makefile
+include $(CURDIR)/makefile-go/include.mk.inc
+
+HELP_DISABLE_LIBRARIES := true
+export HELP_DISABLE_LIBRARIES
+
+export PROJECT_NAME=docker-proxy
+export GO_TARGET=./cmd
+
+TEST_TMP_DIR = $(CURDIR)/.tmp
+
+define BUILD_VARIABLES_TEST_ENABLE_SKIP_PERM
+github.com/name212/docker-proxy/pkg/utils/permissions.AllowSkipEnv=true
+endef
+
+##@ My super project
+
+_test/help/in-end:
+	@mkdir -p "$(TEST_TMP_DIR)"
+```
+
+and run:
+
+```bash
+make HELP_DISABLE_LIBRARIES=true
+```
+
+you will get next comfortable output:
+
+```
+Usage: make <target> OPTION=<value>
+
+Common. Makefile help
+  help                                        Show this message
+                                                HELP_DISABLE_LIBRARIES=true - if passed output target only from running Makefile
+                                                                            - If passed ignore another options.
+                                                HELP_LIBRARIES_FIRST=true   - if passed output targets from running Makefile last,
+                                                                            - libraries first
+                                                HELP_LIBRARIES_OUT=PATHS..  - Comma separated full paths libraries for output
+                                                                            - Optional. Can be set with HELP_LIBRARIES_FIRST
+
+My super project
+  _test/help/in-end                           Help in end test
+                                                PRINT_PARAM=STR - Print string           
+                                                                  Optional. Default: NOT_SET
 ```
