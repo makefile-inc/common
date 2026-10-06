@@ -70,6 +70,7 @@ GET_GIT_FILES_SEPARATOR = |||
 define INCLUDE_GIT_OPS
 ${INCLUDE_ECHO} \
 ${INCLUDE_STRINGS} \
+${INCLUDE_FS_CONSUME} \
 function is_git_repo_has_not_changes() { \
 	local stt=""; \
 	if ! stt="$$(git status)"; then \
@@ -365,7 +366,6 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 	@##~ SKIP_UPGRADE_SUBMODULES=true - if passed do not upgrade recursive submodules in passed submodule.
 	@##~                              - Optional.
 	@${INCLUDE_GIT_OPS} \
-	${INCLUDE_FS_CONSUME} \
 	if ! repo_has_submodules; then \
 		exit_with_err "Repo does not contains submodules"; \
 	fi; \
