@@ -459,7 +459,7 @@ common/git/submodule/remove: ## Remove submodule
 		exit_with_err "Cannot remove submodule from .git"; \
 	fi; \
 	echo_info "Remove submodule dir '$$SUBMODULE_DIR'"; \
-	if ! git rm -rv "$$SUBMODULE_DIR"; then \
+	if ! git rm -f "$$SUBMODULE_DIR"; then \
 		exit_with_err "Cannot remove submodule dir '$$SUBMODULE_DIR'"; \
 	fi
 	echo_info "Remove submodule from .gitmodules"; \
