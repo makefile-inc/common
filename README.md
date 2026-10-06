@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.17.0
+git fetch -a && git checkout v0.18.0
 popd
 ```
 
@@ -96,17 +96,15 @@ include $(CURDIR)/makefile-common/include.mk.inc
 
 ## Update as submodule
 
-If you already have version `>=v0.17.0` you can use target `common/git/upgrade-submodule`:
-
 ```bash
-make common/git/upgrade-submodule SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.17.0"
+make common/git/submodule/upgrade SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.18.0"
 ``` 
 or manually:
 
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.17.0
+git fetch -a && git checkout v0.18.0
 popd
 ```
 
