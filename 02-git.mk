@@ -371,7 +371,7 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 	fi; \
 	ret_code_is_sub_module="0"; \
 	if is_git_dir_submodule_dir "$$SUBMODULE_DIR"; then \
-		echo_green "Passed submodule dir '$$SUBMODULE_DIR'"; \
+		echo_info "Passed submodule dir '$$SUBMODULE_DIR'"; \
 	else \
 		ret_code_is_sub_module="$$?"; \
 		if [[ "$$ret_code_is_sub_module" == "255" ]]; then \
@@ -439,7 +439,7 @@ common/git/submodule/remove: ## Remove submodule
 	fi; \
 	ret_code_is_sub_module="0"; \
 	if is_git_dir_submodule_dir "$$SUBMODULE_DIR"; then \
-		echo_green "Passed submodule dir '$$SUBMODULE_DIR' for remove"; \
+		echo_info "Passed submodule dir '$$SUBMODULE_DIR' for remove"; \
 	else \
 		ret_code_is_sub_module="$$?"; \
 		if [[ "$$ret_code_is_sub_module" == "255" ]]; then \
@@ -447,18 +447,31 @@ common/git/submodule/remove: ## Remove submodule
 		fi; \
 		exit_with_err "SUBMODULE_DIR '$$SUBMODULE_DIR' is not submodule dir"; \
 	fi; \
-	echo_green "De-init submodule"; \
+	echo_info "De-init submodule"; \
 	if git submodule deinit -f "$$SUBMODULE_DIR"; then \
 		exit_with_err "Cannot submodule deinit"; \
 	fi; \
 	git_submodule_dir="$${const_git_modules_dir}/$${SUBMODULE_DIR}"; \
-	echo_green "Remove submodule from .git '$$git_submodule_dir'"; \
+	echo_info "Remove submodule from .git '$$git_submodule_dir'"; \
 	if ! rm -rfv "$$git_submodule_dir"; then \
 		exit_with_err "Cannot remove submodule from .git"; \
 	fi; \
-	echo_green "Remove submodule dir '$$SUBMODULE_DIR'"; \
+	echo_info "Remove submodule dir '$$SUBMODULE_DIR'"; \
 	if git rm -rfv "$$SUBMODULE_DIR"; then \
 		exit_with_err "Cannot remove submodule dir '$$SUBMODULE_DIR'"; \
 	fi
+	echo_info "Remove submodule from .gitmodules"; \
+	rm_pattern="/\\[submodule "$$SUBMODULE_DIR"\\]/,+2d"
+	if ! sed -i "$rm_pattern" .gitmodules; then \
+		exit_with_err "Cannot remove module from .gitmodules"; \
+	fi; \
+	if ! git add .gitmodules "$$SUBMODULE_DIR"; then \
+		exit_with_err "Cannot add to git commit .gitmodules and '$$SUBMODULE_DIR'"; \
+	fi; \
+	if ! git commit --signoff -m "Remove submodule $$SUBMODULE_DIR"; then \
+		exit_with_err "Cannot commit .gitmodules and '$$SUBMODULE_DIR'"; \
+	fi; \
+	echo_info "Submodule '$$SUBMODULE_DIR' removed. .gitmodules content:"; \
+	cat .gitmodules || true
 
 .PHONY: common/git/check/gitignore common/git/check/has-diff common/git/check/no-changes common/git/submodule/upgrade common/git/submodule/remove
