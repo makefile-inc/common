@@ -23,6 +23,18 @@ GET_GIT_FILES_SEPARATOR = |||
 #	  Returns 255 code if has internal error (git status failed), 
 #     otherwise repo has not detach head (on branch).
 #	  Arguments: do not take any arguments
+#	is_git_dir_submodule_dir - check is passed path is git submodule dir
+# 	  Returns 0 if submodule, 1 otherwise not.
+# 	  Returns 255 code if has internal error:
+#       path not passed
+#       path is absolute path
+#       path contains parents (start with ..) 
+#       path is not dir
+#     Arguments:
+#       $1 - dir for check
+#	repo_has_submodules - check git repo (current dir) has submodules
+# 	    Returns 0 if has submodules, 1 otherwise not.
+# 	  Arguments: do not take any arguments
 # Example include:
 #   @${INCLUDE_GIT_OPS} \ - slash is required!
 # Example:
@@ -184,6 +196,42 @@ function is_repo_detach_head() { \
 		return 0; \
 	fi; \
 	return 1; \
+}; \
+function is_git_dir_submodule_dir() { \
+	local dir_path="$${1:-}"; \
+	if [ -z "$$dir_path" ]; then \
+		echo_error "Dir path is not passed"; \
+		return 255; \
+	fi; \
+	if [[ "$$dir_path" == /* ]]; then \
+		echo_error "Dir '$$dir_path' is not relative"; \
+		return 255; \
+	fi; \
+	if [[ "$$dir_path" == ..* ]]; then \
+		echo_error "Dir '$$dir_path' has parent dir (start with ..)"; \
+		return 255; \
+	fi; \
+	if [ ! -d "$$dir_path" ]; then \
+		echo_error "Dir '$$dir_path' is not dir"; \
+		return 255; \
+	fi; \
+	if [ ! -s "$${SUBMODULE_DIR}/.git" ]; then \
+		return 1; \
+	fi; \
+	return 0; \
+}; \
+const_git_modules_dir=".git/modules"; \
+function repo_has_submodules() { \
+	if [ ! -f ".gitmodules" ]; then \
+		return 1; \
+	fi; \
+	if [ ! -d "$$const_git_modules_dir" ]; then \
+		return 1; \
+	fi; \
+	if dir_is_empty "$$const_git_modules_dir"; then \
+		return 1; \
+	fi; \
+	return 0; \
 };
 endef
 
@@ -308,8 +356,8 @@ common/git/check/has-diff: ## Check diff in repo and out diffed files
 	done; \
 	exit 1
 
-common/git/upgrade-submodule: ## Upgrade submodule to new ref or pull current branch
-	@##~ SUBMODULE_DIR=PATH           - submodule dir path.
+common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current branch
+	@##~ SUBMODULE_DIR=PATH           - submodule dir path. Should relative without parents (..)
 	@##~                                Required.
 	@##~ CHECKOUT_TO=GIT_REF_OR_TAG   - if passed checkout to passed ref.
 	@##~                                Otherwise, only pull of current if repo not of tag
@@ -318,14 +366,18 @@ common/git/upgrade-submodule: ## Upgrade submodule to new ref or pull current br
 	@##~                              - Optional.
 	@${INCLUDE_GIT_OPS} \
 	${INCLUDE_FS_CONSUME} \
-	if [ -z "$$SUBMODULE_DIR" ]; then \
-		exit_with_err "SUBMODULE_DIR not passed"; \
+	if ! repo_has_submodules; then \
+		exit_with_err "Repo does not contains submodules"; \
 	fi; \
-	if [ ! -d "$$SUBMODULE_DIR" ]; then \
-		exit_with_err "Submodule dir '$$SUBMODULE_DIR' is not dir"; \
-	fi; \
-	if [ ! -s "$${SUBMODULE_DIR}/.git" ]; then \
-		exit_with_err "Dir '$$SUBMODULE_DIR' is not submodule dir"; \
+	ret_code_is_sub_module="0"; \
+	if is_git_dir_submodule_dir "$$SUBMODULE_DIR"; then \
+		echo_green "Passed submodule dir '$$SUBMODULE_DIR'"; \
+	else \
+		ret_code_is_sub_module="$$?"; \
+		if [[ "$$ret_code_is_sub_module" == "255" ]]; then \
+			exit_with_err "SUBMODULE_DIR '$$SUBMODULE_DIR' incorrect"; \
+		fi; \
+		exit_with_err "SUBMODULE_DIR '$$SUBMODULE_DIR' is not submodule dir"; \
 	fi; \
 	function __upgrade_submodule() { \
 		if ! git fetch -a; then \
@@ -378,4 +430,35 @@ common/git/upgrade-submodule: ## Upgrade submodule to new ref or pull current br
 		exit 1; \
 	fi
 
-.PHONY: common/git/check/gitignore common/git/check/has-diff common/git/check/no-changes
+common/git/submodule/remove: ## Remove submodule
+	@##~ SUBMODULE_DIR=PATH - submodule dir path. Should relative without parents (..)
+	@##~                      Required.
+	@${INCLUDE_GIT_OPS} \
+	if ! repo_has_submodules; then \
+		exit_with_err "Repo does not contains submodules"; \
+	fi; \
+	ret_code_is_sub_module="0"; \
+	if is_git_dir_submodule_dir "$$SUBMODULE_DIR"; then \
+		echo_green "Passed submodule dir '$$SUBMODULE_DIR' for remove"; \
+	else \
+		ret_code_is_sub_module="$$?"; \
+		if [[ "$$ret_code_is_sub_module" == "255" ]]; then \
+			exit_with_err "SUBMODULE_DIR '$$SUBMODULE_DIR' incorrect"; \
+		fi; \
+		exit_with_err "SUBMODULE_DIR '$$SUBMODULE_DIR' is not submodule dir"; \
+	fi; \
+	echo_green "De-init submodule"; \
+	if git submodule deinit -f "$$SUBMODULE_DIR"; then \
+		exit_with_err "Cannot submodule deinit"; \
+	fi; \
+	git_submodule_dir="$${const_git_modules_dir}/$${SUBMODULE_DIR}"; \
+	echo_green "Remove submodule from .git '$$git_submodule_dir'"; \
+	if ! rm -rfv "$$git_submodule_dir"; then \
+		exit_with_err "Cannot remove submodule from .git"; \
+	fi; \
+	echo_green "Remove submodule dir '$$SUBMODULE_DIR'"; \
+	if git rm -rfv "$$SUBMODULE_DIR"; then \
+		exit_with_err "Cannot remove submodule dir '$$SUBMODULE_DIR'"; \
+	fi
+
+.PHONY: common/git/check/gitignore common/git/check/has-diff common/git/check/no-changes common/git/submodule/upgrade common/git/submodule/remove

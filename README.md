@@ -579,7 +579,15 @@ Next definitions can be included multiple times because sh redeclare function wi
      - `$1`  - if passes non empty string, will cd to directory and returns to current dir after call
      - `$2`  - glob to find files
      - `$3`  - function to call
-     - `...` - another arguments will passed to function started from **second** arg, first argument is file path. 
+     - `...` - another arguments will passed to function started from **second** arg, first argument is file path.
+  
+  - `dir_is_empty` - check dir is empty, returns `0` if empty, returns `1` if not.  
+    
+    Returns `255` code if has internal error (passed arg is empty or not dir)
+
+    Arguments:
+      - `$1`  - dir for check
+  
   Example:
   ```Makefile
   include *.mk
@@ -682,6 +690,23 @@ Next definitions can be included multiple times because sh redeclare function wi
     otherwise repo has not detach head (on branch).
     
     Arguments: do not take any arguments.
+  - `is_git_dir_submodule_dir` - check is passed path is git submodule dir
+ 	  
+    Returns `0` if submodule, `1` otherwise not.
+
+ 	  Returns `255` code if has internal error:
+    - path not passed
+    - path is absolute path
+    - path contains parents (start with `..`) 
+    - path is not dir
+    
+    Arguments:
+    - `$1` - dir for check
+  - `repo_has_submodules` - check git repo (current dir) has submodules
+    
+    Returns `0` if has submodules, `1` otherwise not.
+
+ 	  Arguments: do not take any arguments.
 
   Example:
   ```Makefile
@@ -1228,21 +1253,27 @@ check-license: check-license/go check-license/bash
   check/no-tidy: common/git/check/has-diff
   ```
 
-- `common/git/upgrade-submodule` - upgrade submodule.
+- `common/git/submodule/upgrade` - upgrade submodule.
 
   Target cd to `SUBMODULE_DIR` and:
-  - Check is `SUBMODULE_DIR` is submodule (check has not empty file `SUBMODULE_DIR/.git`
+  - Check repo has submodules 
+  - Check is `SUBMODULE_DIR` is submodule (check has not empty file `SUBMODULE_DIR/.git`)
   - If passed `CHECKOUT_TO` checkout to this ref.
   - If not passed `CHECKOUT_TO` target checks that submodule has not detach head
     and run `git pull`
   - In the end update submodules of submodule recursive if not passed (by default) `SKIP_UPGRADE_SUBMODULES`
 
   Params:
-  - `SUBMODULE_DIR`=*PATH* - submodule dir path. Required.
+  - `SUBMODULE_DIR`=*PATH* - submodule dir path. Should relative without parents (`..`). Required.
   - `CHECKOUT_TO`=*GIT_REF_OR_TAG* - if passed checkout to passed ref.
 	  Otherwise, only pull of current if repo not of tag (detach head).
   - `SKIP_UPGRADE_SUBMODULES`=*true* - if passed do not upgrade recursive submodules in passed submodule.
 	  Optional.
+
+- `common/git/submodule/remove` - remove submodule.
+
+  Params:
+  - `SUBMODULE_DIR`=*PATH* - submodule dir path. Should relative without parents (`..`). Required.
 
 ### Add targets to help output
 
