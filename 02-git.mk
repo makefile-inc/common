@@ -408,6 +408,7 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 			fi; \
 		fi; \
 		if [ -z "$${SKIP_UPGRADE_SUBMODULES:-}" ]; then \
+			echo_green "Update submodules in submodule recursive"; \
 			if ! git submodule update --recursive; then \
 				echo_error "Cannot update submodules in submodule '$$SUBMODULE_DIR'"; \
 				return 1; \
@@ -419,7 +420,7 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 	}; \
 	do_in_submodule_ret_code="0"; \
 	if do_in_dir "$$SUBMODULE_DIR" "__upgrade_submodule"; then \
-		echo "" \
+		echo ""; \
 		exit 0; \
 	else \
 		do_in_submodule_ret_code="$$?"; \
