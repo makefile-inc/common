@@ -461,7 +461,7 @@ common/git/submodule/remove: ## Remove submodule
 	echo_info "Remove submodule dir '$$SUBMODULE_DIR'"; \
 	if ! git rm -f "$$SUBMODULE_DIR"; then \
 		exit_with_err "Cannot remove submodule dir '$$SUBMODULE_DIR'"; \
-	fi
+	fi; \
 	if ! git add .gitmodules; then \
 		exit_with_err "Cannot add to git commit .gitmodules"; \
 	fi; \
