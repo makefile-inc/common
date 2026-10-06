@@ -450,7 +450,7 @@ common/git/submodule/remove: ## Remove submodule
 		exit_with_err "SUBMODULE_DIR '$$SUBMODULE_DIR' is not submodule dir"; \
 	fi; \
 	echo_info "De-init submodule"; \
-	if git submodule deinit -f "$$SUBMODULE_DIR"; then \
+	if ! git submodule deinit -f "$$SUBMODULE_DIR"; then \
 		exit_with_err "Cannot submodule deinit"; \
 	fi; \
 	git_submodule_dir="$${const_git_modules_dir}/$${SUBMODULE_DIR}"; \
@@ -459,7 +459,7 @@ common/git/submodule/remove: ## Remove submodule
 		exit_with_err "Cannot remove submodule from .git"; \
 	fi; \
 	echo_info "Remove submodule dir '$$SUBMODULE_DIR'"; \
-	if git rm -rfv "$$SUBMODULE_DIR"; then \
+	if ! git rm -rfv "$$SUBMODULE_DIR"; then \
 		exit_with_err "Cannot remove submodule dir '$$SUBMODULE_DIR'"; \
 	fi
 	echo_info "Remove submodule from .gitmodules"; \
