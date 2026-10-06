@@ -462,16 +462,11 @@ common/git/submodule/remove: ## Remove submodule
 	if ! git rm -f "$$SUBMODULE_DIR"; then \
 		exit_with_err "Cannot remove submodule dir '$$SUBMODULE_DIR'"; \
 	fi
-	echo_info "Remove submodule from .gitmodules"; \
-	rm_pattern="/\\[submodule "$$SUBMODULE_DIR"\\]/,+2d"
-	if ! sed -i "$rm_pattern" .gitmodules; then \
-		exit_with_err "Cannot remove module from .gitmodules"; \
-	fi; \
-	if ! git add .gitmodules "$$SUBMODULE_DIR"; then \
-		exit_with_err "Cannot add to git commit .gitmodules and '$$SUBMODULE_DIR'"; \
+	if ! git add .gitmodules; then \
+		exit_with_err "Cannot add to git commit .gitmodules"; \
 	fi; \
 	if ! git commit --signoff -m "Remove submodule $$SUBMODULE_DIR"; then \
-		exit_with_err "Cannot commit .gitmodules and '$$SUBMODULE_DIR'"; \
+		exit_with_err "Cannot commit .gitmodules"; \
 	fi; \
 	echo_info "Submodule '$$SUBMODULE_DIR' removed. .gitmodules content:"; \
 	cat .gitmodules || true; \
