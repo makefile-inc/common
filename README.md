@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.16.0
+git fetch -a && git checkout v0.17.0
 popd
 ```
 
@@ -96,10 +96,17 @@ include $(CURDIR)/makefile-common/include.mk.inc
 
 ## Update as submodule
 
+If you already have version `>=v0.17.0` you can use target `common/git/upgrade-submodule`:
+
+```bash
+make common/git/upgrade-submodule SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.17.0"
+``` 
+or manually:
+
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.16.0
+git fetch -a && git checkout v0.17.0
 popd
 ```
 
@@ -572,7 +579,15 @@ Next definitions can be included multiple times because sh redeclare function wi
      - `$1`  - if passes non empty string, will cd to directory and returns to current dir after call
      - `$2`  - glob to find files
      - `$3`  - function to call
-     - `...` - another arguments will passed to function started from **second** arg, first argument is file path. 
+     - `...` - another arguments will passed to function started from **second** arg, first argument is file path.
+  
+  - `dir_is_empty` - check dir is empty, returns `0` if empty, returns `1` if not.  
+    
+    Returns `255` code if has internal error (passed arg is empty or not dir)
+
+    Arguments:
+      - `$1`  - dir for check
+  
   Example:
   ```Makefile
   include *.mk
@@ -657,11 +672,11 @@ Next definitions can be included multiple times because sh redeclare function wi
     Returns `255` code if has internal error. 
   - `get_git_changed_files` - returns `1` and echo list of files have changes in one string separated by `$(GET_GIT_FILES_SEPARATOR)`.
 
-     Returns `255` code if has internal error.
+    Returns `255` code if has internal error.
 
-     Returns `zero` code if git repo has not changes.
+    Returns `zero` code if git repo has not changes.
 
-     Arguments:
+    Arguments:
     - `$1` - if passed `true` also new files will returned
     - `$2` - comma-separated grep patterns files to check diff. Optional 
       otherwise check all files.
@@ -669,6 +684,29 @@ Next definitions can be included multiple times because sh redeclare function wi
        otherwise check all files.
     - `$4` - get diff with passed git ref. Optional.
        If not passed, do diff with current git repo state.
+  - `is_repo_detach_head` - returns `0` ret code if repo has detach head (on tag or commit).
+
+    Returns `255` code if has internal error (git status failed), 
+    otherwise repo has not detach head (on branch).
+    
+    Arguments: do not take any arguments.
+  - `is_git_dir_submodule_dir` - check is passed path is git submodule dir
+ 	  
+    Returns `0` if submodule, `1` otherwise not.
+
+ 	  Returns `255` code if has internal error:
+    - path not passed
+    - path is absolute path
+    - path contains parents (start with `..`) 
+    - path is not dir
+    
+    Arguments:
+    - `$1` - dir for check
+  - `repo_has_submodules` - check git repo (current dir) has submodules
+    
+    Returns `0` if has submodules, `1` otherwise not.
+
+ 	  Arguments: do not take any arguments.
 
   Example:
   ```Makefile
@@ -1214,6 +1252,28 @@ check-license: check-license/go check-license/bash
   check/no-tidy: export TARGET_NAME=go/tidy
   check/no-tidy: common/git/check/has-diff
   ```
+
+- `common/git/submodule/upgrade` - upgrade submodule.
+
+  Target cd to `SUBMODULE_DIR` and:
+  - Check repo has submodules 
+  - Check is `SUBMODULE_DIR` is submodule (check has not empty file `SUBMODULE_DIR/.git`)
+  - If passed `CHECKOUT_TO` checkout to this ref.
+  - If not passed `CHECKOUT_TO` target checks that submodule has not detach head
+    and run `git pull`
+  - In the end update submodules of submodule recursive if not passed (by default) `SKIP_UPGRADE_SUBMODULES`
+
+  Params:
+  - `SUBMODULE_DIR`=*PATH* - submodule dir path. Should relative without parents (`..`). Required.
+  - `CHECKOUT_TO`=*GIT_REF_OR_TAG* - if passed checkout to passed ref.
+	  Otherwise, only pull of current if repo not of tag (detach head).
+  - `SKIP_UPGRADE_SUBMODULES`=*true* - if passed do not upgrade recursive submodules in passed submodule.
+	  Optional.
+
+- `common/git/submodule/remove` - remove submodule.
+
+  Params:
+  - `SUBMODULE_DIR`=*PATH* - submodule dir path. Should relative without parents (`..`). Required.
 
 ### Add targets to help output
 

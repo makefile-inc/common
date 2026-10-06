@@ -34,7 +34,11 @@
 #       $1  - if passes non empty string, will cd to directory and returns to current dir after call
 #       $2  - glob to find files
 #       $3  - function to call
-#       ... - another arguments will passed to function started from second arg, first argument is file path  
+#       ... - another arguments will passed to function started from second arg, first argument is file path
+# 	dir_is_empty - check dir is empty, returns 0 if empty, returns 1 if not.  
+#	  Returns 255 code if has internal error (passed arg is empty or not dir)
+#     Arguments:
+#       $1  - dir for check
 # Example include:
 #   @${INCLUDE_FS_CONSUME} \ - slash is required!
 # Example:
@@ -133,6 +137,29 @@ function toggle_globs() { \
 }; \
 function is_glob() { \
 	if [[ "$$1{:-}" =~ [*?\[] ]]; then \
+		return 0; \
+	fi; \
+	return 1; \
+}; \
+function dir_is_empty() { \
+	local dir_path="$${1:-}"; \
+	if [ -z "$$dir_path" ]; then \
+		echo_error "dir path not passed"; \
+		return 255; \
+	fi; \
+	if [ ! -d "$$dir_path" ]; then \
+		echo_error "dir path '$$dir_path' not dir"; \
+		return 255; \
+	fi; \
+	local ls_out=""; \
+	if ! ls_out="$$(ls "$$dir_path")"; then \
+		echo_error "cannot ls '$$dir_path'"; \
+		return 255; \
+	fi; \
+	if [ -z "$$ls_out" ]; then \
+		return 0; \
+	fi; \
+	if echo "$$ls_out" | grep -qi "total 0"; then \
 		return 0; \
 	fi; \
 	return 1; \
