@@ -419,6 +419,7 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 	}; \
 	do_in_submodule_ret_code="0"; \
 	if do_in_dir "$$SUBMODULE_DIR" "__upgrade_submodule"; then \
+		echo "" \
 		exit 0; \
 	else \
 		do_in_submodule_ret_code="$$?"; \
@@ -472,6 +473,7 @@ common/git/submodule/remove: ## Remove submodule
 		exit_with_err "Cannot commit .gitmodules and '$$SUBMODULE_DIR'"; \
 	fi; \
 	echo_info "Submodule '$$SUBMODULE_DIR' removed. .gitmodules content:"; \
-	cat .gitmodules || true
+	cat .gitmodules || true; \
+	echo ""
 
 .PHONY: common/git/check/gitignore common/git/check/has-diff common/git/check/no-changes common/git/submodule/upgrade common/git/submodule/remove
