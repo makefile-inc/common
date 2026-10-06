@@ -344,7 +344,7 @@ common/git/upgrade-submodule: ## Upgrade submodule to new ref or pull current br
 				echo_error "CHECKOUT_TO not passed and repo has detach head. Cannot run pull"; \
 				return 1; \
 			else \
-				check_detach_ret_code="$$?"
+				check_detach_ret_code="$$?"; \
 				if [[ "$$check_detach_ret_code" == "255" ]]; then \
 					echo_error "Cannot check repo has detach head"; \
 					return 1; \
