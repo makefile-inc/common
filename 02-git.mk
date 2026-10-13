@@ -137,6 +137,9 @@ function get_git_changed_files() { \
 		done <<<"$$output"; \
 		local changed=(); \
 		for fl_a in "$${files[@]}"; do \
+			if [ -z "$$fl_a" ]; then \
+				continue; \
+			fi; \
 			local skipped=""; \
 			for skp in "$${__git_diff_patterns_for_skip_arr[@]}"; do \
 				if grep -qE "$$skp" <<<"$$fl_a"; then \
@@ -168,6 +171,9 @@ function get_git_changed_files() { \
 	fi; \
 	if [ -n "$$new_output" ]; then \
 		for new_f in $$new_output; do \
+			if [ -z "$$new_f" ]; then \
+				continue; \
+			fi; \
 			changed+=("$$new_f"); \
 		done; \
 	fi; \
@@ -349,7 +355,7 @@ common/git/check/has-diff: ## Check diff in repo and out diffed files
 	split_by "$(GET_GIT_FILES_SEPARATOR)" "diffed_files" "$$diffed_files_str"; \
 	msg="$${HAS_DIFF_MSG:-}"; \
 	if [ -n "$$msg" ]; then \
-		exit_with_err "$$msg"; \
+		echo_err "$$msg"; \
 	fi; \
 	echo_err "Files changed:"; \
 	for chn_f in "$${diffed_files[@]}"; do \
