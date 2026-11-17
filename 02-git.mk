@@ -35,6 +35,9 @@ GET_GIT_FILES_SEPARATOR = |||
 #	repo_has_submodules - check git repo (current dir) has submodules
 # 	    Returns 0 if has submodules, 1 otherwise not.
 # 	  Arguments: do not take any arguments
+# 	repo_get_latest_tag - get latest git tag in current dir. Find latest with sort -V (version sort)
+# 		Returns 1 if got empty tag (not found tag)
+# 		Returns 255 if internal error
 # Example include:
 #   @${INCLUDE_GIT_OPS} \ - slash is required!
 # Example:
@@ -70,6 +73,7 @@ GET_GIT_FILES_SEPARATOR = |||
 define INCLUDE_GIT_OPS
 ${INCLUDE_ECHO} \
 ${INCLUDE_STRINGS} \
+${INCLUDE_SPLIT} \
 ${INCLUDE_FS_CONSUME} \
 function is_git_repo_has_not_changes() { \
 	local stt=""; \
@@ -239,6 +243,30 @@ function repo_has_submodules() { \
 		return 1; \
 	fi; \
 	return 0; \
+}; \
+function repo_get_latest_tag() { \
+	local tags_out=""; \
+	if ! tags_out="$$(git tag)"; then \
+		echo_err "Cannot get git tags list"; \
+		return 255; \
+	fi; \
+	local tags_sorted=""; \
+	if ! tags_sorted="$$(echo "$$tags_out" | sort -Vrb)"; then \
+		echo_err "Cannot sort git tags list"; \
+		return 255; \
+	fi; \
+	local latest_tag=""; \
+	if ! latest_tag="$$(echo "$$tags_sorted" | head -n 1)"; then \
+		echo_err "Cannot get latest tag"; \
+		return 255; \
+	fi; \
+	latest="$$(trim_spaces "$$latest_tag")"; \
+	if [ -z "$$latest" ]; then \
+		echo_err "Latest tag not found"; \
+		return 1; \
+	fi; \
+	echo -n "$$latest"; \
+	return 0; \
 };
 endef
 
@@ -273,11 +301,11 @@ common/git/check/gitignore: ## Check that gitignore file contains another gitign
 		if [ -z "$$line" ]; then \
 			return 1; \
 		fi; \
-		local spaces_re="^[[:space]]+$$"; \
-		if [[ "$$line" =~ $$spaces_re ]]; then \
+		local spaces_re="^\\s+$$"; \
+		if echo "$$line" | grep -qP "$$spaces_re"; then \
 			return 1; \
 		fi; \
-		if grep -q "^#" <<<"$$line"; then \
+		if echo "$$line" | grep -q "^#"; then \
 			return 1; \
 		fi; \
 		return 0; \
@@ -367,6 +395,7 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 	@##~ SUBMODULE_DIR=PATH           - submodule dir path. Should relative without parents (..)
 	@##~                                Required.
 	@##~ CHECKOUT_TO=GIT_REF_OR_TAG   - if passed checkout to passed ref.
+	@##~                                If passed ref is :last: will find latest tag and checkout to it. 
 	@##~                                Otherwise, only pull of current if repo not of tag
 	@##~                                (detach head)
 	@##~ SKIP_UPGRADE_SUBMODULES=true - if passed do not upgrade recursive submodules in passed submodule.
@@ -391,9 +420,18 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 			return 1; \
 		fi; \
 		if [ -n "$${CHECKOUT_TO:-}" ]; then \
-			echo_info "Checkout submodule '$$SUBMODULE_DIR' to '$$CHECKOUT_TO' ref"; \
-			if ! git checkout "$$CHECKOUT_TO"; then \
-				echo_error "Cannot checkout submodule '$SUBMODULE_DIR' to '$$CHECKOUT_TO' ref"; \
+			local checkout_ref="$$CHECKOUT_TO"; \
+			local latest_msg=""; \
+			if [[ "$checkout_ref" == ":last:" ]]; then \
+				if ! checkout_ref="$$(repo_get_latest_tag)"; then \
+					echo_error "Cannot git latest tag"; \
+					return 1; \
+				fi; \
+				latest_msg=" to latest tag"; \
+			fi; \
+			echo_info "Checkout submodule '$$SUBMODULE_DIR' to$${latest_msg} '$$checkout_ref' ref"; \
+			if ! git checkout "$$checkout_ref"; then \
+				echo_error "Cannot checkout submodule '$SUBMODULE_DIR' to '$$checkout_ref' ref"; \
 				return 1; \
 			fi; \
 		else \
@@ -438,6 +476,13 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 		exit 1; \
 	fi
 
+common/git/submodule/upgrade/latest: export CHECKOUT_TO = :last:
+common/git/submodule/upgrade/latest: common/git/submodule/upgrade ## Upgrade submodule to latest tag
+	@##~ SUBMODULE_DIR=PATH           - submodule dir path. Should relative without parents (..)
+	@##~                                Required.
+	@##~ SKIP_UPGRADE_SUBMODULES=true - if passed do not upgrade recursive submodules in passed submodule.
+	@##~                              - Optional.
+
 common/git/submodule/remove: ## Remove submodule
 	@##~ SUBMODULE_DIR=PATH - submodule dir path. Should relative without parents (..)
 	@##~                      Required.
@@ -478,4 +523,4 @@ common/git/submodule/remove: ## Remove submodule
 	cat .gitmodules || true; \
 	echo ""
 
-.PHONY: common/git/check/gitignore common/git/check/has-diff common/git/check/no-changes common/git/submodule/upgrade common/git/submodule/remove
+.PHONY: common/git/check/gitignore common/git/check/has-diff common/git/check/no-changes common/git/submodule/upgrade common/git/submodule/remove common/git/submodule/upgrade/latest
