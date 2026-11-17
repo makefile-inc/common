@@ -84,9 +84,10 @@ $(MAKE) $(1) && $(MAKE) $(2) || (ret=$$?; $(MAKE) $(2) && exit $$ret)
 endef
 
 # INCLUDE_ECHO - add next sh functions:
-#   echo_err - print to stderr first argument with red color
-#   echo_info - print to stderr first argument with green color
-#   echo_warn - print to stderr first argument with yellow color
+#   echo_err   - print to stderr first argument with red color
+#   echo_error - alias for echo_err
+#   echo_info  - print to stderr first argument with green color
+#   echo_warn  - print to stderr first argument with yellow color
 #   exit_with_err - print to stderr first argument with red color and exit with non-zero exit code (default 1, maybe passed  with second arg)
 # Example include:
 #   @${INCLUDE_ECHO} \ - slash is required!
@@ -107,6 +108,9 @@ endef
 define INCLUDE_ECHO
 function echo_err() { \
 	echo -e "${RED_COLOR}$${1:-}${NO_COLOR}" >&2; \
+}; \
+function echo_error() { \
+	echo_err "$1"; \
 }; \
 function echo_info() { \
 	echo -e "${GREEN_COLOR}$${1:-}${NO_COLOR}" >&2; \

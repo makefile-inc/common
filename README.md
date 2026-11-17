@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.19.0
+git fetch -a && git checkout v0.20.0
 popd
 ```
 
@@ -97,14 +97,21 @@ include $(CURDIR)/makefile-common/include.mk.inc
 ## Update as submodule
 
 ```bash
-make common/git/submodule/upgrade SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.19.0"
-``` 
+make common/git/submodule/upgrade SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.20.0"
+```
+
+or to latest tag:
+
+```bash
+make common/git/submodule/upgrade/latest SUBMODULE_DIR="makefile-common"
+```
+
 or manually:
 
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.19.0
+git fetch -a && git checkout v0.20.0
 popd
 ```
 
@@ -288,6 +295,7 @@ Next definitions can be included multiple times because sh redeclare function wi
 
 - `INCLUDE_ECHO` - add next sh functions:
     - `echo_err`      - print to stderr first argument with red color
+    - `echo_error`    - alias for `echo_err`
     - `echo_info`     - print to stderr first argument with green color
     - `echo_warn`     - print to stderr first argument with yellow color
     - `exit_with_err` - print to stderr first argument with red color 
@@ -700,9 +708,16 @@ Next definitions can be included multiple times because sh redeclare function wi
     
     Arguments:
     - `$1` - dir for check
-  - `repo_has_submodules` - check git repo (current dir) has submodules
+  - `repo_has_submodules` - check git repo (current dir) has submodules.
     
     Returns `0` if has submodules, `1` otherwise not.
+
+ 	  Arguments: do not take any arguments.
+  - `repo_get_latest_tag` - get latest git tag in current dir. Find latest with `sort -V` (version sort)
+    
+    Returns `1` if got empty tag (not found tag).
+
+    Returns `255` if internal error.
 
  	  Arguments: do not take any arguments.
 
@@ -900,6 +915,31 @@ Next definitions can be included multiple times because sh redeclare function wi
   		exit 1; \
   	fi
   ```
+- `INCLUDE_DOCKER_UTILS` - add next sh function:
+  - `docker_slugify_tag` - prepare string for using as docker tag.
+
+    Arguments:
+    - `$1` - string for slugify
+  - `get_compose_file` - get docker compose file from env `COMPOSE_FILE` or `$(CURDIR)/docker-compose.yaml`
+    
+    Arguments: do not take any arguments
+  - `check_compose_params` - prepare general args for run docker compose.
+
+    Get docker compose file with `get_compose_file` and check it exist.
+
+    If passed `COMPOSE_ENV` env, check that file is exist and add `--env-file` arg.
+    
+    If `COMPOSE_ENV` file not exists, print that file is not exist and
+    if passed `COMPOSE_ENV_EXAMPLE` env, print usage this example file for create `COMPOSE_ENV` file.
+
+    Arguments:
+    - `$1` - array name for set args
+  - `run_compose` - run docker compose and returns docker compose exit code.
+
+    Arguments:
+    - `$1` - array name for set args, which passed to `check_compose_params`.
+    - `...` - another arguments passed to docker compose after general params.
+
 ## Targets
 
 ### Help
@@ -1257,8 +1297,9 @@ check-license: check-license/go check-license/bash
   - Check repo has submodules 
   - Check is `SUBMODULE_DIR` is submodule (check has not empty file `SUBMODULE_DIR/.git`)
   - If passed `CHECKOUT_TO` checkout to this ref.
+    If pass `:last:`, then find latest tag in submodule dir after fetch and checkout to its tag.
   - If not passed `CHECKOUT_TO` target checks that submodule has not detach head
-    and run `git pull`
+    and run `git pull`.
   - In the end update submodules of submodule recursive if not passed (by default) `SKIP_UPGRADE_SUBMODULES`
 
   Params:
@@ -1268,10 +1309,67 @@ check-license: check-license/go check-license/bash
   - `SKIP_UPGRADE_SUBMODULES`=*true* - if passed do not upgrade recursive submodules in passed submodule.
 	  Optional.
 
+- `common/git/submodule/upgrade/latest` - checkout module to latest tag. Runs `common/git/submodule/upgrade` 
+   with `CHECKOUT_TO=:last:`.
+
+  Params:
+  - `SUBMODULE_DIR`=*PATH* - submodule dir path. Should relative without parents (`..`). Required.
+  - `SKIP_UPGRADE_SUBMODULES`=*true* - if passed do not upgrade recursive submodules in passed submodule.
+	  Optional.
+
 - `common/git/submodule/remove` - remove submodule.
 
   Params:
   - `SUBMODULE_DIR`=*PATH* - submodule dir path. Should relative without parents (`..`). Required.
+
+### Docker and docker compose
+
+Target for docker and docker compose.
+
+For docker compose target can pass `COMPOSE_FILE` params for docker compose file.
+If this parameter not passed, use `$(CURDIR)/docker-compose.yaml` file.
+
+**WARNING!** If you pass `COMPOSE_ENV` to `docker/compose/run`, 
+`COMPOSE_ENV` **should pass** to `docker/compose/stop` and `docker/compose/logs`!
+
+- `check/installed/docker` - `docker` is installed in the system
+- `check/installed/docker/compose` - `docker compose` plugin is installed for docker
+- `docker/compose/run` - down and up docker compose.
+  
+  Params:
+	- `COMPOSE_FILE`=*PATH* - docker compose file. Optional. 
+    By default, `$(CURDIR)/docker-compose.yaml`
+	- `COMPOSE_REMOVE_VOLUMES`=*true* - if passed, remove volumes. Optional	
+	- `COMPOSE_NOT_DETACH`=*true* - if passed, run in not detach mode. Optional
+	- `COMPOSE_ENV`=*PATH* - if passed, run compose with `--env-file` arg. Optional
+	- `COMPOSE_ENV_EXAMPLE`=*PATH* - if passed, output use this example file for `COMPOSE_ENV`. Optional
+	- `COMPOSE_RUN_TARGET`=*TARGET* - if passed, output use `COMPOSE_RUN_TARGET/stop` for stop compose 
+	  and `COMPOSE_RUN_TARGET/logs` for output logs in detach mode.
+	  Optional
+
+- `docker/compose/stop` -  stop docker compose
+  
+  Params:
+	- `COMPOSE_FILE`=*PATH* - docker compose file. Optional.
+    By default, `$(CURDIR)/docker-compose.yaml`
+  - `COMPOSE_ENV`=*PATH* - if passed, run compose with `--env-file` arg. 
+    If you pass `COMPOSE_ENV` to `docker/compose/run` **should passed**.
+  - `COMPOSE_REMOVE_VOLUMES`=*true* - if passed, remove volumes. Optional
+
+`docker/compose/logs` - show logs for docker compose
+
+  Params:
+  - `COMPOSE_FILE`=*PATH* - docker compose file. Optional.
+    By default, `$(CURDIR)/docker-compose.yaml`
+  - `COMPOSE_ENV`=*PATH* - if passed, run compose with `--env-file` arg. 
+    If you pass `COMPOSE_ENV` to `docker/compose/run` **should passed**.
+  - `FOLLOW`=*true* - if passed, follow logs. Optional
+  - `NO_TIMES`=*true* - if passed, no print timestamps.
+  - `SERVICE`=*NAME* - if passed, output logs only for passed service `NAME`.
+    Also, no output log prefix. Optional
+  - `SINCE`=*RELATIVE* - if passed, output last logs from relative timestamp
+    Can be `1s` for seconds, `1m` for minutes. Optional
+  - `LAST`=*LINES_NUM* - if passed, output last numbers of logs. Optional
 
 ### Add targets to help output
 

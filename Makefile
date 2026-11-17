@@ -607,6 +607,17 @@ _test/get-diff:
 	echo_warn "Diff with main:"; \
 	$(MAKE) _test/run/get-diff TARGET_REF=main
 
+_test/latest-tag:
+	@${INCLUDE_GIT_OPS} \
+	latest=""; \
+	if ! latest="$$(repo_get_latest_tag)"; then \
+		echo_error "Cannot git latest tag"; \
+		return 1; \
+	fi; \
+	echo_info "Latest tag is '$$latest'"
+
+_test/git: _test/latest-tag
+
 define FULL_COMMENT
 # Copyright \d{4}
 # license that can be found in the LICENSE file.
@@ -646,4 +657,4 @@ _test/license: _test/license/current _test/license/current/full _test/license/cu
 
 _test/clean: clean/common clean/build clean/release _clean/dummy
 
-_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/release _test/executable _test/license _test/str-utils _test/fs-utils _test/clean
+_test/all: _test/echo _test/install/common _test/common/all _test/build/all _test/common/all/build _test/common/all/fail _test/build/all/fail _test/release _test/executable _test/license _test/str-utils _test/fs-utils _test/git _test/clean

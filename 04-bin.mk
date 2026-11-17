@@ -368,10 +368,6 @@ check/installed/curl: export BIN_NAME = curl
 check/installed/curl: ## curl
 	@$(MAKE) check/installed/bin
 
-check/installed/docker: export BIN_NAME = docker
-check/installed/docker: ## docker
-	@$(MAKE) check/installed/bin
-
 check/installed/tar: export BIN_NAME = $(TAR_BIN)
 check/installed/tar: ## GNU tar
 	@$(MAKE) check/installed/bin
@@ -453,4 +449,4 @@ clean/common: ## Remove common binaries from local bin dir
 	@rm -fv "$(JQ_BIN_FULL)"
 	@rm -fv "$(YQ_BIN_FULL)"
 
-.PHONY: bin check/installed/bin check/installed/tar check/installed/find check/installed/sha256sum check/installed/curl check/installed/docker install/binary install/jq install/yq install/common/all clean/common check/bin/linked/dynamic check/bin/linked/static
+.PHONY: bin check/installed/bin check/installed/tar check/installed/find check/installed/sha256sum check/installed/curl install/binary install/jq install/yq install/common/all clean/common check/bin/linked/dynamic check/bin/linked/static
