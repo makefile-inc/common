@@ -270,6 +270,44 @@ function repo_get_latest_tag() { \
 };
 endef
 
+# INCLUDE_MAKEFILE_GIT_MODULE - add next sh functions:
+#   update_submodule_to_latest - upgrade submodule with common/git/submodule/upgrade
+#       If common/git/submodule/upgrade failed - exit with error
+#     Arguments:
+#       $1 - dir from makefile, can be full
+#       $2 - default submodule dir, should relative
+#       $3 - checkout ref, if not passed or empty - checkout to latest tag
+# Example include:
+#   @${INCLUDE_MAKEFILE_GIT_MODULE} \ - slash is required!
+# Example:
+#   include *.mk
+#   upgrade-submodule:
+#	    @${INCLUDE_MAKEFILE_GIT_MODULE} \
+#	    update_submodule_to_latest "$(_INC_MK_COMMON_ROOT_DIR)" "makefile-common" "$${CHECKOUT_TO:-}"
+# Can be included multiple times because sh redeclare function without error
+define INCLUDE_MAKEFILE_GIT_MODULE
+${INCLUDE_ECHO} \
+function update_submodule_to_latest() { \
+	local mk_from_include="$$1"; \
+	local mk_default="$$2"; \
+	local checkout_to="$${3:-}"; \
+	submod_dir="$$mk_from_include"; \
+	if [ -z "$$submod_dir" ]; then \
+		submod_dir="$$mk_default"; \
+	else \
+		cur_dir="$(CURDIR)/"; \
+		submod_dir="$${submod_dir#$$cur_dir}"; \
+	fi; \
+	if [ -z "$$checkout_to" ]; then \
+		checkout_to=":last:"; \
+	fi; \
+	if ! $(MAKE) common/git/submodule/upgrade SUBMODULE_DIR="$$submod_dir" CHECKOUT_TO="$$checkout_to"; then \
+		exit_with_err "Cannot upgrade submodule"; \
+	fi; \
+	return 0; \
+};
+endef
+
 common/git/check/no-changes: ## Check that git repo has not changes across all repo.
 	@${INCLUDE_GIT_OPS} \
 	if ! is_git_repo_has_not_changes; then \
@@ -422,7 +460,7 @@ common/git/submodule/upgrade: ## Upgrade submodule to new ref or pull current br
 		if [ -n "$${CHECKOUT_TO:-}" ]; then \
 			local checkout_ref="$$CHECKOUT_TO"; \
 			local latest_msg=""; \
-			if [[ "$checkout_ref" == ":last:" ]]; then \
+			if [[ "$$checkout_ref" == ":last:" ]]; then \
 				if ! checkout_ref="$$(repo_get_latest_tag)"; then \
 					echo_error "Cannot git latest tag"; \
 					return 1; \
@@ -523,4 +561,9 @@ common/git/submodule/remove: ## Remove submodule
 	cat .gitmodules || true; \
 	echo ""
 
-.PHONY: common/git/check/gitignore common/git/check/has-diff common/git/check/no-changes common/git/submodule/upgrade common/git/submodule/remove common/git/submodule/upgrade/latest
+makefile-common/upgrade/module: ## Upgrade makefile-common submodule in your repo
+	@##~ CHECKOUT_TO=GIT_REF_OR_TAG - if passed checkout to passed ref, otherwise to latest tag
+	@${INCLUDE_MAKEFILE_GIT_MODULE} \
+	update_submodule_to_latest "$(_INC_MK_COMMON_ROOT_DIR)" "makefile-common" "$${CHECKOUT_TO:-}"
+
+.PHONY: common/git/check/gitignore common/git/check/has-diff common/git/check/no-changes common/git/submodule/upgrade common/git/submodule/remove common/git/submodule/upgrade/latest makefile-common/upgrade/module
