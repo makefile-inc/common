@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.20.0
+git fetch -a && git checkout v0.21.0
 popd
 ```
 
@@ -97,7 +97,7 @@ include $(CURDIR)/makefile-common/include.mk.inc
 ## Update as submodule
 
 ```bash
-make common/git/submodule/upgrade SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.20.0"
+make common/git/submodule/upgrade SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.21.0"
 ```
 
 or to latest tag:
@@ -111,7 +111,7 @@ or manually:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.20.0
+git fetch -a && git checkout v0.21.0
 popd
 ```
 
@@ -753,6 +753,22 @@ Next definitions can be included multiple times because sh redeclare function wi
 		done; \
 		exit 1
   ```
+- `INCLUDE_MAKEFILE_GIT_MODULE` - add next sh functions:
+  - `update_submodule_to_latest` - upgrade submodule with `common/git/submodule/upgrade`
+    If `common/git/submodule/upgrade` failed - exit with error.
+
+    Arguments:
+    - `$1` - dir from makefile, can be full
+    - `$2` - default submodule dir, should relative
+    - `$3` - checkout ref, if not passed or empty - checkout to latest tag
+
+  Example:
+  ```Makefile
+  include *.mk
+  upgrade-submodule:
+    @${INCLUDE_MAKEFILE_GIT_MODULE} \
+    update_submodule_to_latest "$(_INC_MK_COMMON_ROOT_DIR)" "makefile-common" "$${CHECKOUT_TO:-}"
+  ```
 - `INCLUDE_CHECK_BINARY` - add next sh function (`INCLUDE_ECHO` also included):
     - `check_binary` - check that binary is exists in `BINARIES_PATH` and executable and have correct version.
 
@@ -1321,6 +1337,11 @@ check-license: check-license/go check-license/bash
 
   Params:
   - `SUBMODULE_DIR`=*PATH* - submodule dir path. Should relative without parents (`..`). Required.
+
+- `makefile-common/upgrade/module` - upgrade makefile-common submodule in your repo
+
+  Params:
+  - `CHECKOUT_TO`=*GIT_REF_OR_TAG* - if passed checkout to passed ref, otherwise to latest tag. Optional.
 
 ### Docker and docker compose
 
