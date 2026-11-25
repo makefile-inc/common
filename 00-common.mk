@@ -110,7 +110,7 @@ function echo_err() { \
 	echo -e "${RED_COLOR}$${1:-}${NO_COLOR}" >&2; \
 }; \
 function echo_error() { \
-	echo_err "$1"; \
+	echo_err "$$1"; \
 }; \
 function echo_info() { \
 	echo -e "${GREEN_COLOR}$${1:-}${NO_COLOR}" >&2; \

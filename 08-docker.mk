@@ -22,6 +22,18 @@ __DEFAULT_COMPOSE_FILE = $(CURDIR)/docker-compose.yaml
 #     Arguments:
 #       $1 - array name for set args, which passed to check_compose_params
 #       Another arguments passed to docker compose after general params
+#   get_containers_with_labels_obj - returns json array with docker containers but Labels is object
+#	  Arguments: do not take any arguments
+#   get_containers_by_label - returns json array (returned from get_containers_with_labels_obj) with docker containers filtered by label
+#     Arguments:
+#       $1 - label key
+#       $2 - label val
+#   get_docker_compose_containers - returns json array (returned from get_containers_with_labels_obj) for docker compose file
+#     Arguments:
+#       $1 - compose file path
+#   has_not_docker_compose_containers - returns 0 if docker compose file has not containers
+#     Arguments:
+#       $1 - compose file path
 # Example include:
 #   @${INCLUDE_DOCKER_UTILS} \ - slash is required!
 # Can be included multiple times because sh redeclare function without error
@@ -87,6 +99,106 @@ function run_compose() { \
 	local -n __compose_run_args="$$args_arr_name"; \
 	docker compose "$${__compose_run_args[@]}" "$$@"; \
 	return $$?; \
+}; \
+function get_containers_with_labels_obj() { \
+	local jq_bin="$(JQ_BIN_FULL)"; \
+	if [ ! -x "$$jq_bin" ]; then \
+		echo_error "jq is not installed"; \
+		return 1; \
+	fi; \
+	local ps_out=""; \
+	if ! ps_out="$$(docker ps --format json)"; then \
+		echo_error "Cannot run docker ps"; \
+		return 1; \
+	fi; \
+	echo "$$ps_out" | "$$jq_bin" -s 'map({ \
+		Names: .Names, \
+		ID: .ID, \
+		CreatedAt: .CreatedAt, \
+		State: .State, \
+		HealthStatus: .HealthStatus, \
+		Image: .Image, \
+		Labels: ( \
+			(.Labels // "") \
+			| split(",") \
+			| map( \
+        		select(. != "") \
+        		| split("=") \
+        		| {(.[0]): (.[1:] | join("="))} \
+      		) \
+    		| add // {} \
+		) \
+	})'; \
+	return $$?; \
+}; \
+function get_containers_by_label() { \
+	local l_key="$$1"; \
+	local l_val="$${2:-}"; \
+	local jq_bin="$(JQ_BIN_FULL)"; \
+	if [ ! -x "$$jq_bin" ]; then \
+		echo_error "jq is not installed"; \
+		return 1; \
+	fi; \
+	if [ -z "$$l_key" ]; then \
+		echo_error "key not passed to get_containers_by_label"; \
+		return 1; \
+	fi; \
+	local containers_out=""; \
+	if ! containers_out="$$(get_containers_with_labels_obj)"; then \
+		echo_error "cannot extract containers"; \
+		return 1; \
+	fi; \
+	echo "$$containers_out" | "$$jq_bin" --arg lk "$$l_key" --arg lv "$$l_val" 'map(select(.Labels[$$lk] == $$lv))'; \
+	return $$?; \
+}; \
+function get_docker_compose_containers() { \
+	local compose_file="$$1"; \
+	local jq_bin="$(JQ_BIN_FULL)"; \
+	if [ ! -x "$$jq_bin" ]; then \
+		echo_error "jq is not installed"; \
+		return 1; \
+	fi; \
+	if [ -z "$$compose_file" ]; then \
+		echo_error "compose file not passed to get_docker_compose_containers"; \
+		return 1; \
+	fi; \
+	local containers_out=""; \
+	if ! containers_out="$$(get_containers_by_label "com.docker.compose.project.config_files" "$$compose_file")"; then \
+		echo_error "cannot extract containers for docker compose '$$compose_file'"; \
+		return 1;\
+	fi; \
+	echo "$$containers_out"; \
+	return 0; \
+}; \
+function has_not_docker_compose_containers() { \
+	local compose_file="$$1"; \
+	local jq_bin="$(JQ_BIN_FULL)"; \
+	if [ ! -x "$$jq_bin" ]; then \
+		echo_error "jq is not installed"; \
+		return 1; \
+	fi; \
+	if [ -z "$$compose_file" ]; then \
+		echo_error "compose file not passed to get_docker_compose_containers"; \
+		return 1; \
+	fi; \
+	local containers_out=""; \
+	if ! containers_out="$$(get_docker_compose_containers "$$compose_file")"; then \
+		echo_error "cannot extract containers for docker compose '$$compose_file'"; \
+		return 1;\
+	fi; \
+	local c_len="0"; \
+	if ! c_len="$$(echo "$$containers_out" | "$$jq_bin" 'length')"; then \
+		echo_error "cannot get len of containers for docker compose '$$compose_file'"; \
+		return 1; \
+	fi; \
+	if [[ "$$c_len" == "0" ]]; then \
+		return 0; \
+	fi; \
+	echo_error "Found $$c_len containers for docker compose '$$compose_file':"; \
+	if ! echo "$$containers_out" | "$$jq_bin" -r '.[].Names' >&2; then \
+		true; \
+	fi; \
+	return 1; \
 };
 endef
 
@@ -184,6 +296,10 @@ docker/compose/stop: docker/compose/run ## stop docker compose
 	@##~                               Optional
 	@##~ COMPOSE_REMOVE_VOLUMES=true - if passed, remove volumes.
 	@##~                               Optional
+	@${INCLUDE_DOCKER_UTILS} \
+	if ! has_not_docker_compose_containers "$$COMPOSE_FILE"; then \
+		exit_with_err "Compose '$$COMPOSE_FILE' was not stop"; \
+	fi
 
 docker/compose/logs: check/installed/docker/compose ## show logs for docker compose
 	@##~ COMPOSE_FILE=PATH - docker compose file
