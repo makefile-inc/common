@@ -70,7 +70,7 @@ Checkout to target version:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.21.0
+git fetch -a && git checkout v0.22.0
 popd
 ```
 
@@ -97,7 +97,7 @@ include $(CURDIR)/makefile-common/include.mk.inc
 ## Update as submodule
 
 ```bash
-make common/git/submodule/upgrade SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.21.0"
+make common/git/submodule/upgrade SUBMODULE_DIR="makefile-common" CHECKOUT_TO="v0.22.0"
 ```
 
 or to latest tag:
@@ -111,7 +111,7 @@ or manually:
 ```bash
 pushd .
 cd makefile-common
-git fetch -a && git checkout v0.21.0
+git fetch -a && git checkout v0.22.0
 popd
 ```
 
@@ -955,6 +955,22 @@ Next definitions can be included multiple times because sh redeclare function wi
     Arguments:
     - `$1` - array name for set args, which passed to `check_compose_params`.
     - `...` - another arguments passed to docker compose after general params.
+  - `get_containers_with_labels_obj` - returns json array with docker containers but Labels is object
+    
+    Arguments: do not take any arguments
+  - `get_containers_by_label` - returns json array (returned from get_containers_with_labels_obj) with docker containers filtered by label
+
+    Arguments:
+    - `$1` - label key
+    - `$2` - label val
+  - `get_docker_compose_containers` - returns json array (returned from get_containers_with_labels_obj) for docker compose file
+
+    Arguments:
+    - `$1` - compose file path
+  - `has_not_docker_compose_containers` - returns 0 if docker compose file has not containers
+    
+    Arguments:
+    - `$1` - compose file path
 
 ## Targets
 
